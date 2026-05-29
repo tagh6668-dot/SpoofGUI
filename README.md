@@ -10,6 +10,10 @@ It is not a VPN. SpoofGUI runs the local SNI-Spoofing listener as administrator 
 127.0.0.1:20883    (Xray HTTP,    when V2Ray is connected)
 ```
 
+<img width="1264" height="802" alt="image" src="https://github.com/user-attachments/assets/4266a7de-bc91-484a-9efc-5b2e6ca03e78" /> 
+
+
+
 ## Current Status
 
 - App version: `1.0.1`
