@@ -10,14 +10,14 @@ SpoofGUI is a native Windows GUI fork for SNI-Spoofing. It runs a local TCP list
 
 SpoofGUI is not a VPN. The normal workflow:
 
-1. Launch SpoofGUI as administrator.
+1. Launch SpoofGUI. It relaunches itself as administrator automatically (UAC prompt).
 2. Open the Main page and press **start** to spawn the Python SNI-Spoof engine bound to `127.0.0.1:40443`.
 3. Open the V2Ray page, import a config (VLESS / VMess / Trojan / Shadowsocks / raw).
 4. Pick a mode for that profile:
-   - **Proxy Mode** — user points clients at SOCKS `127.0.0.1:20882` / HTTP `127.0.0.1:20883` manually.
-   - **Tunnel Mode** — spawns `tun2socks.exe` against xray's local SOCKS5 inbound. A wintun virtual adapter receives all traffic at the IP layer; SpoofGUI pins a `/32` route to the upstream proxy host so xray's outbound bypasses the tunnel, then installs `0.0.0.0/0` via the wintun gateway. On disconnect, the routes are removed and tun2socks is killed.
-   - **System Proxy** — on connect, SpoofGUI flips the Windows Internet Settings to route the whole system through the HTTP inbound; on stop, it reverts.
-5. Press **connect**. The C# app starts the bundled `xray.exe` with a generated config.
+   - **Proxy Mode** — user points clients at SOCKS `127.0.0.1:20882` / HTTP `127.0.0.1:20883` manually (ports configurable in Settings). Runs `xray.exe`.
+   - **Tunnel Mode** — runs `sing-box.exe` as a full core: a tun (wintun) inbound with `auto_route` + `strict_route` captures all OS traffic, and the profile's proxy outbound carries it. `auto_detect_interface` keeps the connection to the proxy server off the tunnel (no loop). sing-box installs and tears down its own routes; on disconnect it is stopped gracefully.
+   - **System Proxy** — runs `xray.exe` and flips the Windows Internet Settings to route the whole system through the HTTP inbound; on stop, it reverts.
+5. Press **connect**. Proxy / System Proxy start `xray.exe`; Tunnel starts `sing-box.exe`.
 
 ## Users
 
@@ -29,8 +29,9 @@ The app is designed for constrained networks where reliability and clarity matte
 
 - Start and stop the SNI-Spoofing listener; show live connection count.
 - Edit the active SNI profile: listen host, listen port, connect IP, connect port, fake SNI.
-- Import, edit, delete, and run VLESS / VMess / Trojan / Shadowsocks profiles through Xray.
+- Import, edit, delete, and run VLESS / VMess / Trojan / Shadowsocks profiles through Xray (Proxy / System Proxy) or sing-box (Tunnel).
 - Switch a profile between Proxy / Tunnel / System Proxy mode.
+- Configure the local SOCKS / HTTP proxy ports.
 - Show real-time upload / download rate and total bytes on the V2Ray page.
 - Show runtime logs and make them easy to copy.
 - Package the tool so end users do not need to install Python, .NET, Xray, or Windows App Runtime.

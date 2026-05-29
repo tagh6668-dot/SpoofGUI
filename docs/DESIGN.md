@@ -44,7 +44,7 @@ Reasons:
 
 Current icon usage:
 
-- Sidebar: Home, Edit, Setting, Document.
+- Sidebar: Home (Main), Edit (Config), Globe (V2Ray), Setting (Settings), Document (Logs).
 - Main page: Edit, Stop, Play.
 - Config page: Undo, Save.
 - Settings page: Sync.
@@ -57,6 +57,15 @@ Current icon usage:
 - Content padding: `32px`, with extra top padding on Logs to avoid title-bar overlap.
 - Sections use spacing and text hierarchy rather than nested cards.
 - Buttons are compact, 36px minimum height, small radius.
+
+## Motion
+
+Motion is subtle and functional, never decorative. Ease-out, no bounce.
+
+- Pages use a staggered `EntranceThemeTransition` (small vertical rise) on first load.
+- Page switches use a `NavigationThemeTransition` on the content frame.
+- The profile list uses add / delete / reorder transitions.
+- While a core is starting, the connect button swaps its icon for a `ProgressRing` and the status reads `connecting…`; the start work runs off the UI thread so the window never freezes.
 
 ## Copy Rules
 
