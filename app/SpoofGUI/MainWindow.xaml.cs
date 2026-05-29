@@ -2,7 +2,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using SpoofGUI.Core;
 using SpoofGUI.Database;
+using SpoofGUI.Engine;
 using SpoofGUI.GUI;
 using WinRT.Interop;
 
@@ -16,6 +18,7 @@ public sealed partial class MainWindow : Window
     {
         InitializeComponent();
         Title = "SpoofGUI";
+        Closed += OnClosed;
 
         var hwnd = WindowNative.GetWindowHandle(this);
         var id = Win32Interop.GetWindowIdFromWindow(hwnd);
@@ -32,6 +35,20 @@ public sealed partial class MainWindow : Window
 
         var savedTheme = App.Services.GetRequiredService<SettingsRepository>().Get("theme") ?? "dark";
         ApplyTheme(savedTheme);
+    }
+
+    private void OnClosed(object sender, WindowEventArgs args)
+    {
+        try { App.Services.GetRequiredService<SingBoxTunnelService>().Stop(); } catch { }
+        try { App.Services.GetRequiredService<XrayCoreService>().Dispose(); } catch { }
+        try { App.Services.GetRequiredService<EngineSupervisor>().Stop(); } catch { }
+        try
+        {
+            var ports = App.Services.GetRequiredService<ProxyPortSettings>();
+            var endpoint = $"http=127.0.0.1:{ports.HttpPort};https=127.0.0.1:{ports.HttpPort};socks=127.0.0.1:{ports.SocksPort}";
+            if (SystemProxy.IsOurs(endpoint)) SystemProxy.Disable();
+        }
+        catch { }
     }
 
     public void ApplyTheme(string theme)

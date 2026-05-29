@@ -21,9 +21,9 @@ public static class NetworkHelper
             foreach (var ni in NetworkInterface.GetAllNetworkInterfaces())
             {
                 if (ni.OperationalStatus != OperationalStatus.Up) continue;
-                if (ni.NetworkInterfaceType != NetworkInterfaceType.Ethernet && 
+                if (ni.NetworkInterfaceType != NetworkInterfaceType.Ethernet &&
                     ni.NetworkInterfaceType != NetworkInterfaceType.Wireless80211) continue;
-                
+
                 if (IsVirtual(ni.Name, ni.Description))
                     continue;
 

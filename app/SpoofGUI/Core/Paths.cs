@@ -25,9 +25,9 @@ internal static class Paths
     public static string PatternEngineConfigPath =>
         Path.Combine(AppContext.BaseDirectory, "engine", "config.json");
 
-    public static string Tun2SocksExePath =>
-        Path.Combine(AppContext.BaseDirectory, "engine", "tun2socks.exe");
+    public static string SingBoxExePath =>
+        Path.Combine(AppContext.BaseDirectory, "engine", "sing-box.exe");
 
-    public static string WintunDllPath =>
-        Path.Combine(AppContext.BaseDirectory, "engine", "wintun.dll");
+    public static string SingBoxConfigPath =>
+        Path.Combine(AppDataDir, "singbox-tun.json");
 }

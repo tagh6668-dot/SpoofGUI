@@ -12,18 +12,20 @@ namespace SpoofGUI.Engine;
 
 public sealed class XrayCoreService : IDisposable
 {
-    private const int SocksPort = 20882;
-    private const int HttpPort = 20883;
-
     private readonly ILogger<XrayCoreService> _log;
     private readonly ProfileRepository _spoofProfiles;
+    private readonly ProxyPortSettings _ports;
     private Process? _proc;
     private bool _isRunning;
 
-    public XrayCoreService(ILogger<XrayCoreService> log, ProfileRepository spoofProfiles)
+    private int SocksPort => _ports.SocksPort;
+    private int HttpPort => _ports.HttpPort;
+
+    public XrayCoreService(ILogger<XrayCoreService> log, ProfileRepository spoofProfiles, ProxyPortSettings ports)
     {
         _log = log;
         _spoofProfiles = spoofProfiles;
+        _ports = ports;
     }
 
     public bool IsRunning => _proc is { HasExited: false } || _isRunning;

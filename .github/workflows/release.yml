@@ -9,15 +9,15 @@ on:
         required: false
         default: false
       release_tag:
-        description: 'Release tag (e.g. v1.0.0)'
+        description: 'Release tag (e.g. v1.0.1)'
         type: string
         required: false
-        default: 'v1.0.0'
+        default: 'v1.0.1'
       release_title:
         description: 'Release title'
         type: string
         required: false
-        default: 'Release v1.0.0'
+        default: 'Release v1.0.1'
 
 permissions:
   contents: write
@@ -30,8 +30,6 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
       - name: Set up Python
         uses: actions/setup-python@v5

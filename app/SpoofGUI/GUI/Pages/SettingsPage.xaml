@@ -11,6 +11,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <StackPanel Grid.Row="0" Spacing="6">
@@ -74,6 +75,30 @@
                 <TextBlock Text="Dark is the recommended default. Light is for bright rooms only; the accent palette is tuned for dark surfaces."
                            Style="{StaticResource TextCaption}"
                            MaxWidth="560" />
+            </StackPanel>
+
+            <StackPanel Grid.Row="4" Margin="0,32,0,0" Spacing="12">
+                <TextBlock Text="Proxy ports" Style="{StaticResource TextH2}" />
+                <TextBlock Text="Local ports xray exposes for SOCKS5 and HTTP. Change only if another app already uses these. Takes effect on next connect."
+                           Style="{StaticResource TextBodyMuted}"
+                           MaxWidth="560" />
+                <StackPanel Orientation="Horizontal" Spacing="16">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="SOCKS5 port" Style="{StaticResource TextCaption}" />
+                        <TextBox x:Name="SocksPortBox" Width="140" InputScope="Number" />
+                    </StackPanel>
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="HTTP port" Style="{StaticResource TextCaption}" />
+                        <TextBox x:Name="HttpPortBox" Width="140" InputScope="Number" />
+                    </StackPanel>
+                    <Button x:Name="SavePortsButton"
+                            Style="{StaticResource SecondaryButton}"
+                            VerticalAlignment="Bottom"
+                            Click="OnSavePorts">
+                        <TextBlock Text="save ports" />
+                    </Button>
+                </StackPanel>
+                <TextBlock x:Name="PortsStatus" Style="{StaticResource TextCaption}" />
             </StackPanel>
         </Grid>
     </ScrollViewer>

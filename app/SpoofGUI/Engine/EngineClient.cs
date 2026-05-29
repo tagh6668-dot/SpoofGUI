@@ -31,17 +31,21 @@ public sealed class EngineClient : IAsyncDisposable
     {
         try
         {
-            _supervisor.Start(p);
-            if (!_supervisor.IsRunning)
-                throw new InvalidOperationException(_supervisor.GetStartupFailureMessage());
 
-            if (!_supervisor.WaitForListener(p.ListenHost, p.ListenPort, TimeSpan.FromSeconds(6)))
-                throw new InvalidOperationException(_supervisor.GetStartupFailureMessage());
+            return await Task.Run(() =>
+            {
+                _supervisor.Start(p);
+                if (!_supervisor.IsRunning)
+                    throw new InvalidOperationException(_supervisor.GetStartupFailureMessage());
 
-            AppLog.Info("engine accepted start command");
-            _listenPort = p.ListenPort;
-            StartStatsTicker();
-            return GetDefaultInterfaceIPv4(p.ConnectIp, p.ConnectPort);
+                if (!_supervisor.WaitForListener(p.ListenHost, p.ListenPort, TimeSpan.FromSeconds(6)))
+                    throw new InvalidOperationException(_supervisor.GetStartupFailureMessage());
+
+                AppLog.Info("engine accepted start command");
+                _listenPort = p.ListenPort;
+                StartStatsTicker();
+                return GetDefaultInterfaceIPv4(p.ConnectIp, p.ConnectPort);
+            }, ct).ConfigureAwait(false);
         }
         catch (Exception e)
         {
@@ -51,13 +55,13 @@ public sealed class EngineClient : IAsyncDisposable
         }
     }
 
-    public Task StopSpoofAsync(CancellationToken ct = default)
+    public async Task StopSpoofAsync(CancellationToken ct = default)
     {
         _statsCts?.Cancel();
         _statsCts?.Dispose();
         _statsCts = null;
-        _supervisor.Stop();
-        return Task.CompletedTask;
+
+        await Task.Run(() => _supervisor.Stop(), ct).ConfigureAwait(false);
     }
 
     public Task<EngineStatus> StatusAsync(CancellationToken ct = default) =>

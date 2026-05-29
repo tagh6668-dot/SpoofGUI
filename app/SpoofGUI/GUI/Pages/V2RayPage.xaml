@@ -6,6 +6,11 @@
     Background="{StaticResource SurfaceBase}">
 
     <Grid Padding="32,32,32,32" RowSpacing="24">
+        <Grid.ChildrenTransitions>
+            <TransitionCollection>
+                <EntranceThemeTransition FromVerticalOffset="14" IsStaggeringEnabled="True" />
+            </TransitionCollection>
+        </Grid.ChildrenTransitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -103,10 +108,17 @@
                         HorizontalAlignment="Right"
                         Spacing="12">
                 <Button x:Name="ConnectButton" Style="{StaticResource PrimaryButton}" Click="OnConnect">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <SymbolIcon Symbol="Play" Foreground="#15181E" />
-                        <TextBlock Text="connect" />
-                    </StackPanel>
+                    <Grid>
+                        <StackPanel x:Name="ConnectContent" Orientation="Horizontal" Spacing="8">
+                            <SymbolIcon Symbol="Play" Foreground="#15181E" />
+                            <TextBlock x:Name="ConnectLabel" Text="connect" />
+                        </StackPanel>
+                        <ProgressRing x:Name="ConnectSpinner"
+                                      Width="18" Height="18"
+                                      Foreground="#15181E"
+                                      IsActive="False"
+                                      Visibility="Collapsed" />
+                    </Grid>
                 </Button>
                 <Button x:Name="StopButton" Style="{StaticResource DangerButton}" Click="OnStop">
                     <StackPanel Orientation="Horizontal" Spacing="8">
@@ -140,6 +152,13 @@
                   SelectionChanged="OnProfileSelected"
                   ScrollViewer.VerticalScrollBarVisibility="Auto"
                   ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+            <ListView.ItemContainerTransitions>
+                <TransitionCollection>
+                    <AddDeleteThemeTransition />
+                    <ReorderThemeTransition />
+                    <ContentThemeTransition />
+                </TransitionCollection>
+            </ListView.ItemContainerTransitions>
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <Grid Padding="0,8" ColumnSpacing="16">

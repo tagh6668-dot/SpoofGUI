@@ -44,7 +44,7 @@ internal static class SystemProxy
         [FieldOffset(0)] public long ftValue;
     }
 
-    [DllImport("wininet.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    [DllImport("wininet.dll", SetLastError = true, CharSet = CharSet.Unicode)]
     private static extern bool InternetSetOption(IntPtr hInternet, int dwOption, IntPtr lpBuffer, int dwBufferLength);
 
     public static void Enable(string proxyServer)
@@ -66,6 +66,19 @@ internal static class SystemProxy
         using var key = Registry.CurrentUser.OpenSubKey(InternetSettingsKey, writable: false);
         if (key is null) return false;
         return key.GetValue("ProxyEnable") is int v && v != 0;
+    }
+
+    public static string? GetProxyServer()
+    {
+        using var key = Registry.CurrentUser.OpenSubKey(InternetSettingsKey, writable: false);
+        return key?.GetValue("ProxyServer") as string;
+    }
+
+        public static bool IsOurs(string ourEndpoint)
+    {
+        if (!IsEnabled()) return false;
+        var current = GetProxyServer();
+        return string.Equals(current, ourEndpoint, StringComparison.OrdinalIgnoreCase);
     }
 
     private static void WriteRegistry(bool enable, string? proxyServer)
@@ -96,8 +109,8 @@ internal static class SystemProxy
         IntPtr bypassPtr = IntPtr.Zero;
         if (enable && proxyServer is not null)
         {
-            serverPtr = Marshal.StringToHGlobalAuto(proxyServer);
-            bypassPtr = Marshal.StringToHGlobalAuto("<local>");
+            serverPtr = Marshal.StringToHGlobalUni(proxyServer);
+            bypassPtr = Marshal.StringToHGlobalUni("<local>");
             options[1] = new INTERNET_PER_CONN_OPTION
             {
                 dwOption = INTERNET_PER_CONN_PROXY_SERVER,

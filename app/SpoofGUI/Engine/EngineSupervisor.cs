@@ -29,6 +29,7 @@ public sealed class EngineSupervisor : IDisposable
 
         ProxyPortKiller.KillOwners(profile.ListenPort);
         WriteConfig(profile);
+        EnsureFirewallRule(profile.ListenPort, exe);
 
         var psi = new ProcessStartInfo
         {
@@ -36,16 +37,28 @@ public sealed class EngineSupervisor : IDisposable
             WorkingDirectory = Path.GetDirectoryName(exe) ?? AppContext.BaseDirectory,
             UseShellExecute = false,
             CreateNoWindow = true,
+
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            StandardOutputEncoding = System.Text.Encoding.UTF8,
+            StandardErrorEncoding = System.Text.Encoding.UTF8,
         };
+
+        psi.Environment["PYTHONIOENCODING"] = "utf-8";
+        psi.Environment["PYTHONUTF8"] = "1";
 
         _proc = Process.Start(psi) ?? throw new InvalidOperationException("failed to start engine");
         _startedAt = DateTimeOffset.Now;
         _proc.EnableRaisingEvents = true;
+        _proc.OutputDataReceived += (_, e) => { if (!string.IsNullOrWhiteSpace(e.Data)) AppLog.Info($"engine: {e.Data}"); };
+        _proc.ErrorDataReceived += (_, e) => { if (!string.IsNullOrWhiteSpace(e.Data)) AppLog.Warn($"engine: {e.Data}"); };
         _proc.Exited += (_, _) =>
         {
             _log.LogWarning("engine exited code={code}", _proc?.ExitCode);
             AppLog.Warn($"engine exited code={_proc?.ExitCode}");
         };
+        _proc.BeginOutputReadLine();
+        _proc.BeginErrorReadLine();
 
         AppLog.Info($"engine process started pid={_proc.Id}");
     }
@@ -78,10 +91,59 @@ public sealed class EngineSupervisor : IDisposable
         if (_proc is null) return;
         try { if (!_proc.HasExited) _proc.Kill(entireProcessTree: true); }
         catch (Exception e) { _log.LogWarning(e, "stop"); }
+        RemoveFirewallRule();
         AppLog.Info("engine process stopped");
         _proc.Dispose();
         _proc = null;
         _startedAt = null;
+    }
+
+    private const string FirewallRuleName = "SpoofGUI SNI-Spoof Listener";
+
+        private static void EnsureFirewallRule(int listenPort, string exePath)
+    {
+        RemoveFirewallRule();
+        var ok = RunNetsh(
+            "advfirewall", "firewall", "add", "rule",
+            $"name={FirewallRuleName}",
+            "dir=in", "action=allow", "protocol=TCP",
+            $"localport={listenPort}",
+            "remoteip=LocalSubnet",
+            $"program={exePath}",
+            "profile=any", "enable=yes");
+        if (ok)
+            AppLog.Info($"firewall: inbound allowed on TCP {listenPort} (LAN) for the SNI listener");
+        else
+            AppLog.Warn($"firewall: could not add inbound rule for TCP {listenPort}; LAN devices may be blocked");
+    }
+
+    private static void RemoveFirewallRule()
+    {
+        RunNetsh("advfirewall", "firewall", "delete", "rule", $"name={FirewallRuleName}");
+    }
+
+    private static bool RunNetsh(params string[] args)
+    {
+        try
+        {
+            var psi = new ProcessStartInfo("netsh")
+            {
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardError = true,
+                RedirectStandardOutput = true,
+            };
+            foreach (var a in args) psi.ArgumentList.Add(a);
+            using var p = Process.Start(psi);
+            if (p is null) return false;
+            p.WaitForExit(5000);
+            return p.ExitCode == 0;
+        }
+        catch (Exception e)
+        {
+            AppLog.Warn($"netsh failed: {e.Message}");
+            return false;
+        }
     }
 
     private static void WriteConfig(SpoofProfile profile)

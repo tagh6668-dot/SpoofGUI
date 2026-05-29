@@ -1,7 +1,7 @@
 @echo off
 setlocal EnableExtensions
 
-set "VERSION=1.0.0"
+set "VERSION=1.0.1"
 set "ROOT=%~dp0"
 set "ROOT=%ROOT:~0,-1%"
 set "APP_CSPROJ=%ROOT%\app\SpoofGUI\SpoofGUI.csproj"
@@ -71,18 +71,26 @@ if not exist "%ROOT%\app\SpoofGUI\Engine\WinDivert64.sys" (
     exit /b 1
 )
 
-set "TUN2SOCKS_VERSION=v2.6.0"
-set "TUN2SOCKS_URL=https://github.com/xjasonlyu/tun2socks/releases/download/%TUN2SOCKS_VERSION%/tun2socks-windows-amd64.zip"
-set "TUN2SOCKS_EXE=%ROOT%\app\SpoofGUI\Engine\tun2socks.exe"
-if not exist "%TUN2SOCKS_EXE%" call :FetchTun2socks
-if errorlevel 1 exit /b 1
-if not exist "%TUN2SOCKS_EXE%" (
-    echo ERROR: tun2socks.exe missing after fetch.
-    exit /b 1
-)
 copy /Y "%ROOT%\app\SpoofGUI\Xray\wintun.dll" "%ROOT%\app\SpoofGUI\Engine\wintun.dll" >nul
 if not exist "%ROOT%\app\SpoofGUI\Engine\wintun.dll" (
-    echo ERROR: wintun.dll missing for tunnel mode.
+    echo ERROR: wintun.dll missing for sing-box tunnel mode.
+    exit /b 1
+)
+
+set "XRAY_EXE=%ROOT%\app\SpoofGUI\Xray\xray.exe"
+if not exist "%XRAY_EXE%" call :FetchXray
+if errorlevel 1 exit /b 1
+if not exist "%XRAY_EXE%" (
+    echo ERROR: xray.exe missing after fetch.
+    exit /b 1
+)
+
+set "SINGBOX_VERSION=1.13.12"
+set "SINGBOX_EXE=%ROOT%\app\SpoofGUI\Engine\sing-box.exe"
+if not exist "%SINGBOX_EXE%" call :FetchSingBox
+if errorlevel 1 exit /b 1
+if not exist "%SINGBOX_EXE%" (
+    echo ERROR: sing-box.exe missing after fetch.
     exit /b 1
 )
 
@@ -92,6 +100,15 @@ if errorlevel 1 exit /b 1
 
 if not exist "%PUBLISH_DIR%\SpoofGUI.exe" (
     echo ERROR: Publish did not produce SpoofGUI.exe.
+    exit /b 1
+)
+
+if not exist "%PUBLISH_DIR%\Xray\xray.exe" (
+    echo ERROR: Publish did not include Xray\xray.exe.
+    exit /b 1
+)
+if not exist "%PUBLISH_DIR%\engine\sing-box.exe" (
+    echo ERROR: Publish did not include engine\sing-box.exe.
     exit /b 1
 )
 
@@ -109,10 +126,6 @@ if not exist "%PUBLISH_DIR%\engine\WinDivert64.dll" (
 )
 if not exist "%PUBLISH_DIR%\engine\WinDivert64.sys" (
     echo ERROR: Publish did not include engine\WinDivert64.sys.
-    exit /b 1
-)
-if not exist "%PUBLISH_DIR%\engine\tun2socks.exe" (
-    echo ERROR: Publish did not include engine\tun2socks.exe.
     exit /b 1
 )
 if not exist "%PUBLISH_DIR%\engine\wintun.dll" (
@@ -179,10 +192,20 @@ for %%D in (
 
 exit /b 0
 
-:FetchTun2socks
-echo Fetching tun2socks %TUN2SOCKS_VERSION%...
-set "TUN2SOCKS_DIR=%ROOT%\app\SpoofGUI\Engine"
-set "TUN2SOCKS_ZIP=%TEMP%\tun2socks.zip"
-set "PS_CMD=$ErrorActionPreference='Stop'; Invoke-WebRequest -Uri '%TUN2SOCKS_URL%' -OutFile '%TUN2SOCKS_ZIP%' -UseBasicParsing; Expand-Archive -Path '%TUN2SOCKS_ZIP%' -DestinationPath '%TUN2SOCKS_DIR%' -Force; Remove-Item '%TUN2SOCKS_ZIP%' -Force; if (Test-Path '%TUN2SOCKS_DIR%\tun2socks-windows-amd64.exe') { Move-Item -Force '%TUN2SOCKS_DIR%\tun2socks-windows-amd64.exe' '%TUN2SOCKS_EXE%' }"
+:FetchXray
+echo Fetching Xray-core (latest)...
+set "XRAY_DIR=%ROOT%\app\SpoofGUI\Xray"
+set "XRAY_ZIP=%TEMP%\xray.zip"
+set "XRAY_URL=https://github.com/XTLS/Xray-core/releases/latest/download/Xray-windows-64.zip"
+set "PS_CMD=$ErrorActionPreference='Stop'; Invoke-WebRequest -Uri '%XRAY_URL%' -OutFile '%XRAY_ZIP%' -UseBasicParsing; $tmp=Join-Path $env:TEMP 'xray_x'; if(Test-Path $tmp){Remove-Item -Recurse -Force $tmp}; Expand-Archive -Path '%XRAY_ZIP%' -DestinationPath $tmp -Force; Copy-Item -Force (Join-Path $tmp 'xray.exe') (Join-Path '%XRAY_DIR%' 'xray.exe'); Remove-Item -Force '%XRAY_ZIP%'; Remove-Item -Recurse -Force $tmp"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "%PS_CMD%"
+exit /b %ERRORLEVEL%
+
+:FetchSingBox
+echo Fetching sing-box %SINGBOX_VERSION%...
+set "SINGBOX_DIR=%ROOT%\app\SpoofGUI\Engine"
+set "SINGBOX_ZIP=%TEMP%\singbox.zip"
+set "SINGBOX_URL=https://github.com/SagerNet/sing-box/releases/download/v%SINGBOX_VERSION%/sing-box-%SINGBOX_VERSION%-windows-amd64.zip"
+set "PS_CMD=$ErrorActionPreference='Stop'; Invoke-WebRequest -Uri '%SINGBOX_URL%' -OutFile '%SINGBOX_ZIP%' -UseBasicParsing; $tmp=Join-Path $env:TEMP 'singbox_x'; if(Test-Path $tmp){Remove-Item -Recurse -Force $tmp}; Expand-Archive -Path '%SINGBOX_ZIP%' -DestinationPath $tmp -Force; $exe=Get-ChildItem -Recurse -Path $tmp -Filter 'sing-box.exe' | Select-Object -First 1; Copy-Item -Force $exe.FullName (Join-Path '%SINGBOX_DIR%' 'sing-box.exe'); Remove-Item -Force '%SINGBOX_ZIP%'; Remove-Item -Recurse -Force $tmp"
 powershell -NoProfile -ExecutionPolicy Bypass -Command "%PS_CMD%"
 exit /b %ERRORLEVEL%

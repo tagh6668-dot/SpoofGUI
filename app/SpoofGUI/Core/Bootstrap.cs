@@ -14,20 +14,18 @@ internal static class Bootstrap
 
         services.AddLogging(b => b.AddDebug().SetMinimumLevel(LogLevel.Debug));
 
-        // Database
         services.AddSingleton<DatabaseConnection>();
         services.AddSingleton<SettingsRepository>();
+        services.AddSingleton<ProxyPortSettings>();
         services.AddSingleton<ProfileRepository>();
         services.AddSingleton<V2RayProfileRepository>();
         services.AddSingleton<DatabaseInitializer>();
 
-        // Engine supervisor + IPC
         services.AddSingleton<EngineSupervisor>();
         services.AddSingleton<EngineClient>();
         services.AddSingleton<XrayCoreService>();
-        services.AddSingleton<TunnelService>();
+        services.AddSingleton<SingBoxTunnelService>();
 
-        // View models
         services.AddSingleton<MainPageViewModel>();
         services.AddTransient<SettingsPageViewModel>();
         services.AddTransient<ConfigPageViewModel>();

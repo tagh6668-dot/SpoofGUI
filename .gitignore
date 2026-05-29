@@ -24,3 +24,47 @@ build/
 .vscode/
 *.swp
 dist/
+*.lock
+CLAUDE.md
+
+# Temp / throwaway tooling
+.tools/
+
+# Python cache (engine source / build)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.pytest_cache/
+
+# Visual Studio / Rider extras
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+_ReSharper*/
+*.DotSettings.user
+*.vsidx
+
+# NuGet
+*.nupkg
+packages/
+
+# Logs / crash dumps
+*.log
+*.tlog
+crash-*.txt
+
+# OS cruft
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# Bundled cores (fetched at build time, not committed)
+app/SpoofGUI/Xray/xray.exe
+app/SpoofGUI/Xray/geoip.dat
+app/SpoofGUI/Xray/geosite.dat
+app/SpoofGUI/Engine/sing-box.exe

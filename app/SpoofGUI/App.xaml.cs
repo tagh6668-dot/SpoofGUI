@@ -1,7 +1,5 @@
 using Microsoft.UI.Xaml;
 using SpoofGUI.Core;
-using System.Diagnostics;
-using System.Security.Principal;
 
 namespace SpoofGUI;
 
@@ -32,43 +30,9 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        if (!IsRunningAsAdministrator())
-        {
-            RelaunchAsAdministrator();
-            Exit();
-            return;
-        }
 
         CurrentWindow = new MainWindow();
         _window = CurrentWindow;
         _window.Activate();
-    }
-
-    private static bool IsRunningAsAdministrator()
-    {
-        using var identity = WindowsIdentity.GetCurrent();
-        var principal = new WindowsPrincipal(identity);
-        return principal.IsInRole(WindowsBuiltInRole.Administrator);
-    }
-
-    private static void RelaunchAsAdministrator()
-    {
-        var exe = Environment.ProcessPath;
-        if (string.IsNullOrWhiteSpace(exe))
-            return;
-
-        try
-        {
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = exe,
-                UseShellExecute = true,
-                Verb = "runas",
-            });
-        }
-        catch
-        {
-            // User cancelled UAC or elevation was blocked. App exits because WinDivert needs admin.
-        }
     }
 }

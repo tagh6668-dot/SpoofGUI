@@ -6,6 +6,11 @@
     Background="{StaticResource SurfaceBase}">
 
     <Grid Padding="32,32,32,32">
+        <Grid.ChildrenTransitions>
+            <TransitionCollection>
+                <EntranceThemeTransition FromVerticalOffset="14" IsStaggeringEnabled="True" />
+            </TransitionCollection>
+        </Grid.ChildrenTransitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -96,10 +101,17 @@
             <Button x:Name="ConnectButton"
                     Style="{StaticResource PrimaryButton}"
                     Click="OnConnect">
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <SymbolIcon Symbol="Play" Foreground="#15181E" />
-                    <TextBlock Text="start" />
-                </StackPanel>
+                <Grid>
+                    <StackPanel x:Name="ConnectContent" Orientation="Horizontal" Spacing="8">
+                        <SymbolIcon Symbol="Play" Foreground="#15181E" />
+                        <TextBlock Text="start" />
+                    </StackPanel>
+                    <ProgressRing x:Name="ConnectSpinner"
+                                  Width="18" Height="18"
+                                  Foreground="#15181E"
+                                  IsActive="False"
+                                  Visibility="Collapsed" />
+                </Grid>
             </Button>
         </StackPanel>
     </Grid>

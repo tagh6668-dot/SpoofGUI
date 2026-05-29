@@ -12,7 +12,7 @@ It is not a VPN. SpoofGUI runs the local SNI-Spoofing listener as administrator 
 
 ## Current Status
 
-- App version: `1.0.0`
+- App version: `1.0.1`
 - Frontend: C# / .NET 10 / WinUI 3
 - Backends:
   - **Python SNI-Spoofing engine** (`engine\SpoofGUI.SniSpoofEngine.exe`) — bundled PyInstaller build of the upstream tool; performs the WinDivert + fake ClientHello injection

@@ -82,13 +82,47 @@ internal static class NetStats
             RecvBps = 0;
         }
 
+        private static readonly string[] VirtualNameHints =
+            { "spoofgui-tunnel", "wintun", "wireguard", "sing-box", "sing", "tun2socks", "tap", "loopback", "virtual", "vethernet", "hyper-v" };
+
         private static (long sent, long recv) ReadAllInterfaceCounters()
         {
+
+            NetworkInterface? primary = null;
+            foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (nic.OperationalStatus != OperationalStatus.Up) continue;
+                if (nic.NetworkInterfaceType == NetworkInterfaceType.Loopback) continue;
+                if (IsVirtual(nic)) continue;
+                try
+                {
+                    var props = nic.GetIPProperties();
+                    var hasGateway = props.GatewayAddresses.Any(g =>
+                        g.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork
+                        && !g.Address.Equals(System.Net.IPAddress.Any));
+                    if (!hasGateway) continue;
+                    primary = nic;
+                    break;
+                }
+                catch { }
+            }
+
+            if (primary is not null)
+            {
+                try
+                {
+                    var s = primary.GetIPStatistics();
+                    return (s.BytesSent, s.BytesReceived);
+                }
+                catch { }
+            }
+
             long sent = 0, recv = 0;
             foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
             {
                 if (nic.OperationalStatus != OperationalStatus.Up) continue;
                 if (nic.NetworkInterfaceType == NetworkInterfaceType.Loopback) continue;
+                if (IsVirtual(nic)) continue;
                 try
                 {
                     var s = nic.GetIPStatistics();
@@ -98,6 +132,12 @@ internal static class NetStats
                 catch { }
             }
             return (sent, recv);
+        }
+
+        private static bool IsVirtual(NetworkInterface nic)
+        {
+            var name = (nic.Name + " " + nic.Description).ToLowerInvariant();
+            return VirtualNameHints.Any(h => name.Contains(h));
         }
     }
 

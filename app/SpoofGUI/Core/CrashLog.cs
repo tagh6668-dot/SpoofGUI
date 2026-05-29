@@ -11,6 +11,6 @@ internal static class CrashLog
             var line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] {source}\n{ex}\n\n";
             File.AppendAllText(LogPath, line);
         }
-        catch { /* best effort */ }
+        catch {  }
     }
 }

@@ -9,11 +9,11 @@ namespace SpoofGUI.GUI.Pages;
 
 public sealed partial class V2RayPage : Page
 {
-    private const string SystemProxyEndpoint = "http=127.0.0.1:20883;https=127.0.0.1:20883;socks=127.0.0.1:20882";
     private readonly V2RayPageViewModel _vm;
     private V2RayProfile? _selected;
     private bool _xrayRunning;
     private bool _systemProxyActive;
+    private bool _tunnelActive;
     private readonly NetStats.BandwidthSampler _sampler = new();
     private readonly DispatcherTimer _statsTimer = new() { Interval = TimeSpan.FromSeconds(1) };
     private DateTime? _connectedAt;
@@ -39,7 +39,7 @@ public sealed partial class V2RayPage : Page
             return;
         }
         _sampler.Tick();
-        StatStatus.Text = _systemProxyActive ? "live · system proxy" : "live";
+        StatStatus.Text = _tunnelActive ? "live · tunnel" : _systemProxyActive ? "live · system proxy" : "live";
         if (_connectedAt is DateTime t)
         {
             var up = DateTime.UtcNow - t;
@@ -57,18 +57,22 @@ public sealed partial class V2RayPage : Page
         try
         {
             Reload();
-            CoreStatusText.Text = File.Exists(Paths.XrayExePath)
-                ? "xray core: bundled"
-                : "xray core: missing";
+            CoreStatusText.Text = File.Exists(Paths.SingBoxExePath)
+                ? "sing-box core: bundled"
+                : "sing-box core: missing";
         }
         catch (Exception ex)
         {
-            CoreStatusText.Text = "xray unavailable";
+            CoreStatusText.Text = "sing-box unavailable";
             StatusText.Text = ex.Message;
         }
 
-        try { _xrayRunning = await _vm.RefreshRunningAsync(); }
-        catch { _xrayRunning = _vm.IsRunning; }
+        bool xrayUp;
+        try { xrayUp = await _vm.RefreshRunningAsync(); }
+        catch { xrayUp = _vm.IsRunning; }
+
+        _tunnelActive = _vm.TunnelRunning;
+        _xrayRunning = xrayUp || _tunnelActive;
 
         _systemProxyActive = SystemProxy.IsEnabled();
         if (_xrayRunning && _connectedAt is null) _connectedAt = DateTime.UtcNow;
@@ -128,6 +132,32 @@ public sealed partial class V2RayPage : Page
         }
 
         ConnectButton.IsEnabled = false;
+        SetConnecting(true);
+
+        if (string.Equals(_selected.Mode, "Tunnel", StringComparison.OrdinalIgnoreCase))
+        {
+            StatusText.Text = "connecting… (sing-box tunnel)";
+            try
+            {
+                await _vm.StartTunnelAsync(_selected);
+                _xrayRunning = true;
+                _tunnelActive = true;
+                _sampler.Reset();
+                _connectedAt = DateTime.UtcNow;
+                _systemProxyActive = false;
+                StatusText.Text = "connected + tunnel (sing-box routing all traffic)";
+            }
+            catch (Exception tx)
+            {
+                try { await _vm.StopTunnelAsync(); } catch { }
+                _xrayRunning = false;
+                _tunnelActive = false;
+                StatusText.Text = $"tunnel failed: {tx.Message}";
+            }
+            RenderActionState();
+            return;
+        }
+
         StatusText.Text = "starting xray...";
         try
         {
@@ -139,7 +169,7 @@ public sealed partial class V2RayPage : Page
             {
                 try
                 {
-                    SystemProxy.Enable(SystemProxyEndpoint);
+                    SystemProxy.Enable(_vm.SystemProxyEndpoint);
                     _systemProxyActive = true;
                     StatusText.Text = "connected + system proxy active";
                 }
@@ -148,22 +178,15 @@ public sealed partial class V2RayPage : Page
                     StatusText.Text = $"connected (proxy set failed: {px.Message})";
                 }
             }
-            else if (string.Equals(_selected.Mode, "Tunnel", StringComparison.OrdinalIgnoreCase))
-            {
-                try
-                {
-                    _vm.Tunnel.Start(_selected.Address);
-                    StatusText.Text = "connected + tunnel (wintun routing all traffic)";
-                }
-                catch (Exception tx)
-                {
-                    try { _vm.Tunnel.Stop(); } catch { }
-                    StatusText.Text = $"connected (tunnel failed: {tx.Message})";
-                }
-            }
             else
             {
-                StatusText.Text = "connected: socks 127.0.0.1:20882, http 127.0.0.1:20883";
+
+                if (SystemProxy.IsOurs(_vm.SystemProxyEndpoint))
+                {
+                    try { SystemProxy.Disable(); } catch { }
+                }
+                _systemProxyActive = false;
+                StatusText.Text = $"connected: socks 127.0.0.1:{_vm.SocksPort}, http 127.0.0.1:{_vm.HttpPort}";
             }
         }
         catch (Exception ex)
@@ -177,7 +200,14 @@ public sealed partial class V2RayPage : Page
     private async void OnStop(object sender, object e)
     {
         StopButton.IsEnabled = false;
-        StatusText.Text = "stopping xray...";
+        StatusText.Text = "stopping...";
+
+        if (_vm.TunnelRunning)
+        {
+            try { await _vm.StopTunnelAsync(); } catch (Exception tx) { AppLog.Warn($"tunnel stop: {tx.Message}"); }
+        }
+        _tunnelActive = false;
+
         try { await _vm.StopAsync(); }
         catch (Exception ex) { StatusText.Text = $"stop failed: {ex.Message}"; }
         _xrayRunning = false;
@@ -186,11 +216,7 @@ public sealed partial class V2RayPage : Page
         {
             try { SystemProxy.Disable(); _systemProxyActive = false; } catch { }
         }
-        if (_vm.Tunnel.IsRunning)
-        {
-            try { _vm.Tunnel.Stop(); } catch (Exception tx) { AppLog.Warn($"tunnel stop: {tx.Message}"); }
-        }
-        StatusText.Text = "xray stopped";
+        StatusText.Text = "stopped";
         UpdateStats();
         RenderActionState();
     }
@@ -255,10 +281,12 @@ public sealed partial class V2RayPage : Page
         var serverName = Field("SNI", profile.ServerName);
         var modeIdx = profile.Mode.Equals("SystemProxy", StringComparison.OrdinalIgnoreCase) ? 2
             : profile.Mode.Equals("Tunnel", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
-        var mode = new ComboBox { SelectedIndex = modeIdx };
+
+        var mode = new ComboBox();
         mode.Items.Add(new ComboBoxItem { Content = "Proxy" });
         mode.Items.Add(new ComboBoxItem { Content = "Tunnel" });
         mode.Items.Add(new ComboBoxItem { Content = "SystemProxy" });
+        mode.SelectedIndex = modeIdx;
         var modeContainer = new StackPanel();
         modeContainer.Children.Add(new TextBlock
         {
@@ -328,8 +356,16 @@ public sealed partial class V2RayPage : Page
         return (container, box);
     }
 
+    private void SetConnecting(bool on)
+    {
+        ConnectSpinner.IsActive = on;
+        ConnectSpinner.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
+        ConnectContent.Visibility = on ? Visibility.Collapsed : Visibility.Visible;
+    }
+
     private void RenderActionState()
     {
+        SetConnecting(false);
         var hasSelection = _selected is not null;
         ConnectButton.IsEnabled = hasSelection && !_xrayRunning;
         StopButton.IsEnabled = _xrayRunning;

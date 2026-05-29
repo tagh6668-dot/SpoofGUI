@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using SpoofGUI.Core;
 using SpoofGUI.Database;
 
 namespace SpoofGUI.GUI.ViewModels;
@@ -14,12 +15,34 @@ public sealed class SettingsPageViewModel
     public const string ReleasesPageUrl = "https://github.com/ZethRise/SpoofGUI/releases";
 
     private readonly SettingsRepository _settings;
+    private readonly ProxyPortSettings _ports;
     private readonly ILogger<SettingsPageViewModel> _log;
 
-    public SettingsPageViewModel(SettingsRepository settings, ILogger<SettingsPageViewModel> log)
+    public SettingsPageViewModel(SettingsRepository settings, ProxyPortSettings ports, ILogger<SettingsPageViewModel> log)
     {
         _settings = settings;
+        _ports = ports;
         _log = log;
+    }
+
+    public int SocksPort => _ports.SocksPort;
+    public int HttpPort => _ports.HttpPort;
+
+        public string? SavePorts(string socksText, string httpText)
+    {
+        if (!int.TryParse(socksText?.Trim(), out var socks))
+            return "SOCKS port must be a number";
+        if (!int.TryParse(httpText?.Trim(), out var http))
+            return "HTTP port must be a number";
+        try
+        {
+            _ports.Set(socks, http);
+            return null;
+        }
+        catch (Exception e)
+        {
+            return e.Message;
+        }
     }
 
     public string AppVersion => Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.1.0";

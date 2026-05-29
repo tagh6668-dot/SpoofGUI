@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using SpoofGUI.GUI.ViewModels;
 
@@ -15,8 +16,16 @@ public sealed partial class MainPage : Page
         Loaded += async (_, _) => await _vm.LoadAsync(this);
     }
 
+    private void SetConnecting(bool on)
+    {
+        ConnectSpinner.IsActive = on;
+        ConnectSpinner.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
+        ConnectContent.Visibility = on ? Visibility.Collapsed : Visibility.Visible;
+    }
+
     public void RenderIdle(string profileName, string flow, string sni)
     {
+        SetConnecting(false);
         HeadlineText.Text = "SpoofGUI";
         HeadlineSub.Text  = "Connect and use your X-Ray Client.";
         ProfileName.Text  = profileName;
@@ -29,6 +38,7 @@ public sealed partial class MainPage : Page
 
     public void RenderConnecting()
     {
+        SetConnecting(true);
         HeadlineText.Text = "starting";
         HeadlineSub.Text  = "Starting local listener and attaching WinDivert.";
         ConnectButton.IsEnabled = false;
@@ -37,6 +47,7 @@ public sealed partial class MainPage : Page
 
     public void RenderLive(string iface, ulong uptimeMs, uint conns)
     {
+        SetConnecting(false);
         HeadlineText.Text = "ready";
         HeadlineSub.Text  = $"Connect and use your X-Ray Client. {conns} active connection{(conns == 1 ? "" : "s")}.";
         StatUptime.Text = FormatUptime(uptimeMs);
@@ -48,6 +59,7 @@ public sealed partial class MainPage : Page
 
     public void RenderError(string message)
     {
+        SetConnecting(false);
         HeadlineText.Text = "error";
         HeadlineSub.Text  = message;
         ConnectButton.IsEnabled = true;

@@ -22,7 +22,24 @@ public sealed partial class SettingsPage : Page
         UpdateVersion.Text = $"installed: {_vm.AppVersion}";
         UpdateLastCheck.Text = _vm.LastUpdateCheckText();
         ThemeChoice.SelectedIndex = _vm.Theme == "light" ? 1 : 0;
+        SocksPortBox.Text = _vm.SocksPort.ToString();
+        HttpPortBox.Text = _vm.HttpPort.ToString();
         _initializing = false;
+    }
+
+    private void OnSavePorts(object sender, object e)
+    {
+        var error = _vm.SavePorts(SocksPortBox.Text, HttpPortBox.Text);
+        if (error is null)
+        {
+            PortsStatus.Text = $"saved: socks {_vm.SocksPort}, http {_vm.HttpPort} (reconnect to apply)";
+            SocksPortBox.Text = _vm.SocksPort.ToString();
+            HttpPortBox.Text = _vm.HttpPort.ToString();
+        }
+        else
+        {
+            PortsStatus.Text = $"not saved: {error}";
+        }
     }
 
     private async void OnCheckUpdates(object sender, object e)

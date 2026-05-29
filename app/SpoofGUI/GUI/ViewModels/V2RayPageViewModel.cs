@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using SpoofGUI.Core;
 using SpoofGUI.Database;
 using SpoofGUI.Engine;
 using SpoofGUI.Models;
@@ -11,16 +12,27 @@ public sealed class V2RayPageViewModel
 {
     private readonly V2RayProfileRepository _profiles;
     private readonly XrayCoreService _xray;
-    private readonly TunnelService _tunnel;
+    private readonly SingBoxTunnelService _tunnel;
+    private readonly ProxyPortSettings _ports;
 
-    public V2RayPageViewModel(V2RayProfileRepository profiles, XrayCoreService xray, TunnelService tunnel)
+    public V2RayPageViewModel(V2RayProfileRepository profiles, XrayCoreService xray, SingBoxTunnelService tunnel, ProxyPortSettings ports)
     {
         _profiles = profiles;
         _xray = xray;
         _tunnel = tunnel;
+        _ports = ports;
     }
 
-    public TunnelService Tunnel => _tunnel;
+    public bool TunnelRunning => _tunnel.IsRunning;
+
+    public Task StartTunnelAsync(V2RayProfile profile) => Task.Run(() => _tunnel.Start(profile));
+    public Task StopTunnelAsync() => Task.Run(() => _tunnel.Stop());
+
+    public int SocksPort => _ports.SocksPort;
+    public int HttpPort => _ports.HttpPort;
+
+    public string SystemProxyEndpoint =>
+        $"http=127.0.0.1:{_ports.HttpPort};https=127.0.0.1:{_ports.HttpPort};socks=127.0.0.1:{_ports.SocksPort}";
 
     public IReadOnlyList<V2RayProfile> LoadProfiles() => _profiles.All();
     public bool IsRunning => _xray.IsRunning;
