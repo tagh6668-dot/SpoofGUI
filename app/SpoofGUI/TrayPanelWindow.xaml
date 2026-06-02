@@ -1,0 +1,226 @@
+<Window
+    x:Class="SpoofGUI.TrayPanelWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Border x:Name="RootCard"
+            RequestedTheme="Dark"
+            Background="{StaticResource SurfaceSunken}"
+            BorderBrush="{StaticResource BorderSubtle}"
+            BorderThickness="1">
+        <Border.Resources>
+            <Style x:Key="TrayLinkButton" TargetType="Button">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Padding" Value="6,4" />
+                <Setter Property="FontFamily" Value="{StaticResource FontFamilyMono}" />
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="Foreground" Value="{StaticResource TextSecondary}" />
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+            </Style>
+        </Border.Resources>
+
+        <Grid Width="306">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="3" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Rectangle Grid.Row="0">
+                <Rectangle.Fill>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                        <GradientStop Offset="0" Color="#F4B656" />
+                        <GradientStop Offset="0.65" Color="#7A5A2C" />
+                        <GradientStop Offset="1" Color="#2E333D" />
+                    </LinearGradientBrush>
+                </Rectangle.Fill>
+            </Rectangle>
+
+            <StackPanel Grid.Row="1" Padding="18,16,18,16" Spacing="15">
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal" Spacing="9" VerticalAlignment="Center">
+                        <Ellipse x:Name="StatusDot" Width="9" Height="9" Fill="{StaticResource TextTertiary}" />
+                        <TextBlock Text="SPOOFGUI"
+                                   FontFamily="{StaticResource FontFamilyMono}"
+                                   FontSize="13"
+                                   FontWeight="SemiBold"
+                                   CharacterSpacing="180"
+                                   Foreground="{StaticResource TextPrimary}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                    <Border x:Name="StatusPill"
+                            Grid.Column="1"
+                            Background="{StaticResource SurfaceRaised}"
+                            CornerRadius="{StaticResource RadiusSm}"
+                            Padding="9,3"
+                            VerticalAlignment="Center">
+                        <TextBlock x:Name="StatusPillText"
+                                   Text="IDLE"
+                                   FontFamily="{StaticResource FontFamilyMono}"
+                                   FontSize="10"
+                                   FontWeight="SemiBold"
+                                   CharacterSpacing="120"
+                                   Foreground="{StaticResource TextTertiary}" />
+                    </Border>
+                </Grid>
+
+                <StackPanel Spacing="2">
+                    <TextBlock x:Name="TrayProfileName"
+                               Text="no active profile"
+                               Style="{StaticResource TextBody}"
+                               FontWeight="SemiBold"
+                               TextTrimming="CharacterEllipsis" />
+                    <TextBlock x:Name="TrayProfileTarget"
+                               Text="—"
+                               Style="{StaticResource TextMono}"
+                               FontSize="12"
+                               Foreground="{StaticResource TextSecondary}"
+                               TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+
+                <Border Background="{StaticResource SurfaceBase}"
+                        BorderBrush="{StaticResource BorderSubtle}"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource RadiusMd}"
+                        Padding="14,11">
+                    <Grid ColumnSpacing="10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Spacing="3">
+                            <TextBlock Text="UPTIME" Style="{StaticResource TextCaption}" FontSize="9" CharacterSpacing="100" />
+                            <TextBlock x:Name="TrayUptime" Text="—" Style="{StaticResource TextMono}" FontSize="12" Foreground="{StaticResource AccentBase}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="3">
+                            <TextBlock Text="DOWN" Style="{StaticResource TextCaption}" FontSize="9" CharacterSpacing="100" />
+                            <TextBlock x:Name="TrayDown" Text="0 B/s" Style="{StaticResource TextMono}" FontSize="12" Foreground="{StaticResource TextPrimary}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Spacing="3">
+                            <TextBlock Text="UP" Style="{StaticResource TextCaption}" FontSize="9" CharacterSpacing="100" />
+                            <TextBlock x:Name="TrayUp" Text="0 B/s" Style="{StaticResource TextMono}" FontSize="12" Foreground="{StaticResource TextPrimary}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="3" Spacing="3" HorizontalAlignment="Right">
+                            <TextBlock Text="CONN" Style="{StaticResource TextCaption}" FontSize="9" CharacterSpacing="100" HorizontalAlignment="Right" />
+                            <TextBlock x:Name="TrayConns" Text="0" Style="{StaticResource TextMono}" FontSize="12" Foreground="{StaticResource TextPrimary}" HorizontalAlignment="Right" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <StackPanel Spacing="8">
+                    <Button x:Name="TraySniButton"
+                            Style="{StaticResource SecondaryButton}"
+                            HorizontalAlignment="Stretch"
+                            Click="OnTraySniToggle">
+                        <Grid HorizontalAlignment="Stretch">
+                            <StackPanel x:Name="TraySniContent" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                                <SymbolIcon x:Name="TraySniIcon" Symbol="Play" Foreground="{StaticResource TextPrimary}" />
+                                <TextBlock x:Name="TraySniLabel" Text="connect SNI engine" />
+                            </StackPanel>
+                            <ProgressRing x:Name="TraySniSpinner" Width="16" Height="16"
+                                          Foreground="{StaticResource AccentBase}"
+                                          IsActive="False" Visibility="Collapsed" />
+                        </Grid>
+                    </Button>
+                    <Button x:Name="TrayV2RayButton"
+                            Style="{StaticResource SecondaryButton}"
+                            HorizontalAlignment="Stretch"
+                            Click="OnTrayV2RayToggle">
+                        <Grid HorizontalAlignment="Stretch">
+                            <StackPanel x:Name="TrayV2RayContent" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                                <SymbolIcon x:Name="TrayV2RayIcon" Symbol="Link" Foreground="{StaticResource TextPrimary}" />
+                                <TextBlock x:Name="TrayV2RayLabel" Text="connect V2Ray" />
+                            </StackPanel>
+                            <ProgressRing x:Name="TrayV2RaySpinner" Width="16" Height="16"
+                                          Foreground="{StaticResource AccentBase}"
+                                          IsActive="False" Visibility="Collapsed" />
+                        </Grid>
+                    </Button>
+                </StackPanel>
+
+                <StackPanel Spacing="6">
+                    <TextBlock Text="PROFILES"
+                               FontFamily="{StaticResource FontFamilyMono}"
+                               FontSize="9"
+                               CharacterSpacing="120"
+                               Foreground="{StaticResource TextTertiary}" />
+                    <ListView x:Name="TrayProfiles"
+                              MaxHeight="150"
+                              SelectionMode="None"
+                              IsItemClickEnabled="True"
+                              ItemClick="OnTrayProfileClick"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto"
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="Padding" Value="8,5" />
+                                <Setter Property="Margin" Value="0" />
+                                <Setter Property="MinHeight" Value="0" />
+                                <Setter Property="CornerRadius" Value="6" />
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnSpacing="9">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Ellipse Grid.Column="0" Width="7" Height="7" VerticalAlignment="Center" Fill="{Binding Marker}" />
+                                    <StackPanel Grid.Column="1" Spacing="1">
+                                        <TextBlock Text="{Binding Name}" Style="{StaticResource TextBody}" FontSize="13" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding Target}" Style="{StaticResource TextMono}" FontSize="11" Foreground="{StaticResource TextSecondary}" TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </StackPanel>
+
+                <TextBlock x:Name="TrayStatusLine"
+                           Text=""
+                           Style="{StaticResource TextCaption}"
+                           FontSize="11"
+                           TextWrapping="Wrap"
+                           Visibility="Collapsed" />
+
+                <Border Height="1" Background="{StaticResource BorderSubtle}" />
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Column="0"
+                            Style="{StaticResource TrayLinkButton}"
+                            HorizontalContentAlignment="Left"
+                            Click="OnTrayShowWindow">
+                        <StackPanel Orientation="Horizontal" Spacing="7">
+                            <FontIcon Glyph="&#xE8A7;" FontSize="12" Foreground="{StaticResource TextSecondary}" />
+                            <TextBlock Text="open spoofgui" />
+                        </StackPanel>
+                    </Button>
+                    <Button Grid.Column="1"
+                            Style="{StaticResource TrayLinkButton}"
+                            HorizontalAlignment="Right"
+                            HorizontalContentAlignment="Right"
+                            Foreground="{StaticResource StatusDanger}"
+                            Click="OnTrayQuit">
+                        <StackPanel Orientation="Horizontal" Spacing="7">
+                            <FontIcon Glyph="&#xE7E8;" FontSize="12" Foreground="{StaticResource StatusDanger}" />
+                            <TextBlock Text="quit" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

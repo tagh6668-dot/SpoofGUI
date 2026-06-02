@@ -70,8 +70,14 @@ Desktop.ini
 $RECYCLE.BIN/
 .DS_Store
 
-# Bundled cores (fetched at build time, not committed)
+# Bundled cores + native binaries (fetched at build time, not committed)
 app/SpoofGUI/Xray/xray.exe
 app/SpoofGUI/Xray/geoip.dat
 app/SpoofGUI/Xray/geosite.dat
+app/SpoofGUI/Xray/wintun.dll
 app/SpoofGUI/Engine/sing-box.exe
+app/SpoofGUI/Engine/wintun.dll
+app/SpoofGUI/Engine/WinDivert.dll
+app/SpoofGUI/Engine/WinDivert64.dll
+app/SpoofGUI/Engine/WinDivert32.sys
+app/SpoofGUI/Engine/WinDivert64.sys

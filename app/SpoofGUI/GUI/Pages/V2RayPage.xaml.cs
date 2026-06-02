@@ -15,6 +15,7 @@ public sealed partial class V2RayPage : Page
     private V2RayProfile? _selected;
     private bool _ready;
     private bool _pinging;
+    private CancellationTokenSource? _pingCts;
     private bool _xrayRunning;
     private bool _systemProxyActive;
     private bool _tunnelActive;
@@ -169,6 +170,7 @@ public sealed partial class V2RayPage : Page
                 await _vm.StartTunnelAsync(_selected);
                 _xrayRunning = true;
                 _tunnelActive = true;
+                _vm.ArmKillSwitch();
                 _sampler.Reset();
                 _connectedAt = DateTime.UtcNow;
                 _systemProxyActive = false;
@@ -190,6 +192,7 @@ public sealed partial class V2RayPage : Page
         {
             await _vm.StartAsync(_selected);
             _xrayRunning = true;
+            _vm.ArmKillSwitch();
             _sampler.Reset();
             _connectedAt = DateTime.UtcNow;
             if (string.Equals(mode, "SystemProxy", StringComparison.OrdinalIgnoreCase))
@@ -228,6 +231,7 @@ public sealed partial class V2RayPage : Page
     {
         StopButton.IsEnabled = false;
         StatusText.Text = "stopping...";
+        _vm.DisarmKillSwitch();
 
         if (_vm.TunnelRunning)
         {
@@ -282,16 +286,16 @@ public sealed partial class V2RayPage : Page
 
     private void OnDelete(object sender, object e)
     {
-        if (_selected is null || _selected.Id == 0)
+        var selected = ProfileList.SelectedItems.OfType<V2RayProfile>().Where(p => p.Id != 0).ToList();
+        if (selected.Count == 0)
         {
             StatusText.Text = "select a config first";
             return;
         }
 
-        var deleted = _selected.Name;
-        _vm.Delete(_selected);
+        foreach (var profile in selected) _vm.Delete(profile);
         _selected = null;
-        StatusText.Text = $"deleted: {deleted}";
+        StatusText.Text = selected.Count == 1 ? $"deleted: {selected[0].Name}" : $"deleted {selected.Count} configs";
         Reload();
         RenderActionState();
     }
@@ -376,25 +380,35 @@ public sealed partial class V2RayPage : Page
     private void RenderActionState()
     {
         SetConnecting(false);
-        var hasSelection = _selected is not null;
-        ConnectButton.IsEnabled = hasSelection && !_xrayRunning;
+        var count = ProfileList.SelectedItems.Count;
+        ConnectButton.IsEnabled = count == 1 && !_xrayRunning;
         StopButton.IsEnabled = _xrayRunning;
         PingButton.IsEnabled = !_pinging;
-        EditButton.IsEnabled = hasSelection;
-        DeleteButton.IsEnabled = hasSelection;
+        EditButton.IsEnabled = count == 1;
+        DeleteButton.IsEnabled = count >= 1;
     }
 
     private void SetPing(V2RayProfile profile, string value) =>
-        _dispatcher.TryEnqueue(() => profile.Ping = value);
+        _dispatcher.TryEnqueue(() =>
+        {
+            profile.Ping = value;
+            _vm.RememberPing(profile.Id, value);
+        });
 
-    private async Task PingProfileAsync(V2RayProfile profile, SemaphoreSlim gate)
+    private async Task PingProfileAsync(V2RayProfile profile, SemaphoreSlim gate, CancellationToken ct)
     {
-        await gate.WaitAsync();
+        try { await gate.WaitAsync(ct); }
+        catch (OperationCanceledException) { return; }
+
         SetPing(profile, "…");
         try
         {
-            var ms = await _vm.TestRealDelayAsync(profile);
+            var ms = await _vm.TestRealDelayAsync(profile, ct);
             SetPing(profile, $"{ms} ms");
+        }
+        catch (OperationCanceledException)
+        {
+            SetPing(profile, "—");
         }
         catch
         {
@@ -410,11 +424,22 @@ public sealed partial class V2RayPage : Page
     {
         _pinging = on;
         PingButton.IsEnabled = !on;
+        PingButton.Visibility = on ? Visibility.Collapsed : Visibility.Visible;
+        CancelPingButton.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
+        CancelPingButton.IsEnabled = on;
         PingLabel.Text = on ? "pinging…" : "ping all";
         PingIcon.Visibility = on ? Visibility.Collapsed : Visibility.Visible;
         PingSpinner.IsActive = on;
         PingSpinner.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
         if (!on) RenderActionState();
+    }
+
+    private void OnCancelPing(object sender, object e)
+    {
+        if (!_pinging) return;
+        CancelPingButton.IsEnabled = false;
+        StatusText.Text = "cancelling…";
+        _pingCts?.Cancel();
     }
 
     private async void OnPingAll(object sender, object e)
@@ -426,6 +451,10 @@ public sealed partial class V2RayPage : Page
             return;
         }
 
+        _pingCts?.Dispose();
+        _pingCts = new CancellationTokenSource();
+        var token = _pingCts.Token;
+
         SetPinging(true);
         StatusText.Text = $"pinging {profiles.Count} config(s)…";
 
@@ -433,14 +462,16 @@ public sealed partial class V2RayPage : Page
         {
             await Task.Run(async () =>
             {
-                using var gate = new SemaphoreSlim(3);
-                await Task.WhenAll(profiles.Select(p => PingProfileAsync(p, gate)));
+                using var gate = new SemaphoreSlim(8);
+                await Task.WhenAll(profiles.Select(p => PingProfileAsync(p, gate, token)));
             });
-            StatusText.Text = "ping complete";
+            StatusText.Text = token.IsCancellationRequested ? "ping cancelled" : "ping complete";
         }
         finally
         {
             SetPinging(false);
+            _pingCts?.Dispose();
+            _pingCts = null;
         }
     }
 
@@ -450,7 +481,7 @@ public sealed partial class V2RayPage : Page
         await Task.Run(async () =>
         {
             using var gate = new SemaphoreSlim(1);
-            await PingProfileAsync(profile, gate);
+            await PingProfileAsync(profile, gate, CancellationToken.None);
         });
         StatusText.Text = $"{profile.Name}: {profile.Ping}";
     }

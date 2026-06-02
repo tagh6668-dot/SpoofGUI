@@ -1,21 +1,19 @@
 param(
     [ValidateSet("amd64", "x86")]
     [string[]]$Arch = @("x86", "amd64"),
-    [string]$Version = "1.0.3",
+    [string]$Version = "1.0.4",
     [string]$SingBoxVersion = "1.13.12",
     [string]$WintunVersion = "0.14.1",
-    [switch]$SkipEngine,
+    [string]$WinDivertTag = "2.2.2",
+    [string]$WinDivertPkg = "2.2.2-A",
     [switch]$SkipFetch,
-    [switch]$PortableOnly,
-    [string]$PythonExeAmd64 = "",
-    [string]$PythonExeX86 = ""
+    [switch]$PortableOnly
 )
 
 $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $PSScriptRoot
 $appCsproj = Join-Path $root "app\SpoofGUI\SpoofGUI.csproj"
-$engineSource = Join-Path $root "app\SpoofGUI\EngineSource"
 $engineDir = Join-Path $root "app\SpoofGUI\Engine"
 $xrayDir = Join-Path $root "app\SpoofGUI\Xray"
 $distDir = Join-Path $root "dist"
@@ -89,6 +87,21 @@ function Get-Wintun {
     Remove-Item -Recurse -Force $tmp
 }
 
+function Get-WinDivert {
+    param([string]$ArchName)
+    $url = "https://github.com/basil00/WinDivert/releases/download/v$WinDivertTag/WinDivert-$WinDivertPkg.zip"
+    $tmp = Join-Path $env:TEMP "spoofgui-windivert-$ArchName"
+    Expand-DownloadedZip -Url $url -ExtractTo $tmp
+    $sub = if ($ArchName -eq "x86") { "x86" } else { "x64" }
+    $dir = Join-Path (Join-Path $tmp "WinDivert-$WinDivertPkg") $sub
+    if (-not (Test-Path (Join-Path $dir "WinDivert.dll"))) { throw "WinDivert.dll for $ArchName not found in archive." }
+    Copy-Item -Force (Join-Path $dir "WinDivert.dll") (Join-Path $engineDir "WinDivert.dll")
+    Copy-Item -Force (Join-Path $dir "WinDivert64.sys") (Join-Path $engineDir "WinDivert64.sys")
+    $sys32 = Join-Path $dir "WinDivert32.sys"
+    if (Test-Path $sys32) { Copy-Item -Force $sys32 (Join-Path $engineDir "WinDivert32.sys") }
+    Remove-Item -Recurse -Force $tmp
+}
+
 function Build-Launcher {
     param([string]$ArchName, [string]$OutExe)
     $vcArch = if ($ArchName -eq "x86") { "x86" } else { "x64" }
@@ -126,20 +139,15 @@ foreach ($a in $Arch) {
     $publishDir = Join-Path $distDir "publish-$a"
     $stageArch = Join-Path $stageRoot $a
 
-    if (-not $SkipEngine) {
-        $pythonExe = if ($a -eq "x86") { $PythonExeX86 } else { $PythonExeAmd64 }
-        & (Join-Path $PSScriptRoot "build-python-engine.ps1") -Arch $a -PythonExe $pythonExe
-        if ($LASTEXITCODE -ne 0) { throw "Python engine build failed for $a." }
-    }
-
-    Assert-Exists (Join-Path $engineDir "SpoofGUI.SniSpoofEngine.exe") "engine exe"
-
     if (-not $SkipFetch) {
+        Get-WinDivert -ArchName $a
         Get-Xray -ArchName $a
         Get-SingBox -ArchName $a
         Get-Wintun -ArchName $a
     }
 
+    Assert-Exists (Join-Path $engineDir "WinDivert.dll") "WinDivert.dll"
+    Assert-Exists (Join-Path $engineDir "WinDivert64.sys") "WinDivert64.sys"
     Assert-Exists (Join-Path $xrayDir "xray.exe") "xray.exe"
     Assert-Exists (Join-Path $engineDir "sing-box.exe") "sing-box.exe"
     Assert-Exists (Join-Path $engineDir "wintun.dll") "wintun.dll"
@@ -151,13 +159,10 @@ foreach ($a in $Arch) {
 
     Assert-Exists (Join-Path $publishDir "SpoofGUI.exe") "published SpoofGUI.exe"
     Assert-Exists (Join-Path $publishDir "Xray\xray.exe") "published Xray\xray.exe"
-    Assert-Exists (Join-Path $publishDir "engine\SpoofGUI.SniSpoofEngine.exe") "published engine exe"
+    Assert-Exists (Join-Path $publishDir "engine\WinDivert.dll") "published WinDivert.dll"
+    Assert-Exists (Join-Path $publishDir "engine\WinDivert64.sys") "published WinDivert64.sys"
     Assert-Exists (Join-Path $publishDir "engine\sing-box.exe") "published sing-box.exe"
     Assert-Exists (Join-Path $publishDir "engine\wintun.dll") "published wintun.dll"
-
-    $sourceDest = Join-Path $publishDir "source\SNI-Spoofing"
-    robocopy $engineSource $sourceDest /E /XD .git __pycache__ /XF *.pyc | Out-Null
-    if ($LASTEXITCODE -ge 8) { throw "Failed to copy SNI-Spoofing source for $a." }
 
     if (Test-Path $stageArch) { Remove-Item -Recurse -Force $stageArch }
     $appSub = Join-Path $stageArch "app"
@@ -184,8 +189,14 @@ foreach ($a in $Arch) {
     $env:SPOOFGUI_ARCH = $a
     $setupOld = Join-Path $distDir "SpoofGUI-Setup-$a.exe"
     if (Test-Path $setupOld) { Remove-Item -Force $setupOld }
-    & $iscc (Join-Path $root "installer\SpoofGUI.iss")
-    if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed for $a." }
+    $issPath = Join-Path $root "installer\SpoofGUI.iss"
+    for ($attempt = 1; $attempt -le 3; $attempt++) {
+        & $iscc $issPath
+        if ($LASTEXITCODE -eq 0) { break }
+        if ($attempt -eq 3) { throw "Inno Setup failed for $a (exit $LASTEXITCODE). If this is 'EndUpdateResource failed (110)', exclude $distDir from antivirus." }
+        Write-Host "Inno Setup attempt $attempt failed (exit $LASTEXITCODE); retrying in 3s..."
+        Start-Sleep -Seconds 3
+    }
     Write-Host "Setup: $setupOld"
 }
 

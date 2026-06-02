@@ -24,6 +24,7 @@ public sealed partial class Shell : UserControl
     private void OnNavConfig(object sender, object e)   => Navigate(typeof(ConfigPage));
     private void OnNavV2Ray(object sender, object e)    => Navigate(typeof(V2RayPage));
     private void OnNavScanner(object sender, object e)  => Navigate(typeof(SniScannerPage));
+    private void OnNavConnections(object sender, object e) => Navigate(typeof(ConnectionsPage));
     private void OnNavSettings(object sender, object e) => Navigate(typeof(SettingsPage));
     private void OnNavLogs(object sender, object e)     => Navigate(typeof(LogsPage));
 

@@ -13,6 +13,7 @@ public sealed class AppSettings
     private const string DirectDnsKey = "direct_dns";
     private const string BootstrapDnsKey = "bootstrap_dns";
     private const string DnsStrategyKey = "dns_strategy";
+    private const string KillSwitchKey = "kill_switch";
 
     private static readonly string[] ValidLogLevels = ["none", "error", "warning", "info", "debug"];
     private static readonly string[] ValidModes = ["Proxy", "Tunnel", "SystemProxy"];
@@ -62,6 +63,12 @@ public sealed class AppSettings
     {
         get => ReadBool(FastModeKey, false);
         set => _settings.Set(FastModeKey, value ? "1" : "0");
+    }
+
+    public bool KillSwitch
+    {
+        get => ReadBool(KillSwitchKey, false);
+        set => _settings.Set(KillSwitchKey, value ? "1" : "0");
     }
 
     public string RemoteDns

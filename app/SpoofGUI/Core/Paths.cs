@@ -19,14 +19,20 @@ internal static class Paths
     public static string XrayExePath => Path.Combine(XrayDir, "xray.exe");
     public static string XrayConfigPath => Path.Combine(AppDataDir, "xray-client.json");
 
-    public static string PatternEngineExePath =>
-        Path.Combine(AppContext.BaseDirectory, "engine", "SpoofGUI.SniSpoofEngine.exe");
+    public static string SingBoxExePath
+    {
+        get
+        {
+            var engineDir = Path.Combine(AppContext.BaseDirectory, "engine");
+            var primary = Path.Combine(engineDir, "sing-box.exe");
+            if (File.Exists(primary)) return primary;
 
-    public static string PatternEngineConfigPath =>
-        Path.Combine(AppContext.BaseDirectory, "engine", "config.json");
+            var windowsNested = Path.Combine(engineDir, "Windows", "sing-box.exe");
+            if (File.Exists(windowsNested)) return windowsNested;
 
-    public static string SingBoxExePath =>
-        Path.Combine(AppContext.BaseDirectory, "engine", "sing-box.exe");
+            return primary;
+        }
+    }
 
     public static string SingBoxConfigPath =>
         Path.Combine(AppDataDir, "singbox-tun.json");

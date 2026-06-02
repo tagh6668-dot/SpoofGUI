@@ -15,6 +15,7 @@ public sealed class MainPageViewModel
 {
     private readonly ProfileRepository _profiles;
     private readonly EngineClient _engine;
+    private readonly ConnectionGuard _guard;
     private readonly ILogger<MainPageViewModel> _log;
 
     private MainPage? _page;
@@ -22,10 +23,11 @@ public sealed class MainPageViewModel
     private string _iface = "—";
     private Action<string, JsonElement>? _handler;
 
-    public MainPageViewModel(ProfileRepository profiles, EngineClient engine, ILogger<MainPageViewModel> log)
+    public MainPageViewModel(ProfileRepository profiles, EngineClient engine, ConnectionGuard guard, ILogger<MainPageViewModel> log)
     {
         _profiles = profiles;
         _engine = engine;
+        _guard = guard;
         _log = log;
     }
 
@@ -76,6 +78,7 @@ public sealed class MainPageViewModel
         try
         {
             _iface = await _engine.StartSpoofAsync(p);
+            _guard.ArmSni();
             AppLog.Info($"listener ready on {DisplayListenHost(p)}:{p.ListenPort}; target {p.ConnectIp}:{p.ConnectPort}; fake_sni {p.FakeSni}");
             _page.RenderLive(_iface, 0, 0);
         }
@@ -92,6 +95,7 @@ public sealed class MainPageViewModel
         if (_page is null) return;
         try
         {
+            _guard.DisarmSni();
             await _engine.StopSpoofAsync();
             AppLog.Info("listener stopped");
             _iface = "—";

@@ -9,15 +9,15 @@ on:
         required: false
         default: false
       release_tag:
-        description: 'Release tag (e.g. v1.0.3)'
+        description: 'Release tag (e.g. v1.0.4)'
         type: string
         required: false
-        default: 'v1.0.3'
+        default: 'v1.0.4'
       release_title:
         description: 'Release title'
         type: string
         required: false
-        default: 'Release v1.0.3'
+        default: 'Release v1.0.4'
 
 permissions:
   contents: write
@@ -31,21 +31,11 @@ jobs:
       matrix:
         include:
           - arch: amd64
-            py-arch: x64
           - arch: x86
-            py-arch: x86
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-
-      - name: Set up Python (${{ matrix.py-arch }})
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          architecture: ${{ matrix.py-arch }}
-          cache: 'pip'
-          cache-dependency-path: 'app/SpoofGUI/EngineSource/requirements.txt'
 
       - name: Set up .NET 10
         uses: actions/setup-dotnet@v4

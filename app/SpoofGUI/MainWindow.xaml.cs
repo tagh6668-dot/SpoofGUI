@@ -1,5 +1,7 @@
+using System.Runtime.InteropServices;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using SpoofGUI.Core;
@@ -13,6 +15,17 @@ namespace SpoofGUI;
 public sealed partial class MainWindow : Window
 {
     private AppWindowTitleBar? _titleBar;
+    private AppWindow _appWindow = null!;
+    private IntPtr _hwnd;
+    private bool _exiting;
+    private bool _cleaned;
+
+    private readonly DispatcherQueue _dispatcher = DispatcherQueue.GetForCurrentThread();
+    private TrayIconHost? _tray;
+    private TrayPanelWindow? _panel;
+
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
 
     public MainWindow()
     {
@@ -20,13 +33,14 @@ public sealed partial class MainWindow : Window
         Title = "SpoofGUI";
         Closed += OnClosed;
 
-        var hwnd = WindowNative.GetWindowHandle(this);
-        var id = Win32Interop.GetWindowIdFromWindow(hwnd);
-        var appWindow = AppWindow.GetFromWindowId(id);
-        appWindow.Resize(new Windows.Graphics.SizeInt32 { Width = 1280, Height = 810 });
-        appWindow.SetIcon(System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "SpoofGUI.ico"));
+        _hwnd = WindowNative.GetWindowHandle(this);
+        var id = Win32Interop.GetWindowIdFromWindow(_hwnd);
+        _appWindow = AppWindow.GetFromWindowId(id);
+        _appWindow.Resize(new Windows.Graphics.SizeInt32 { Width = 1280, Height = 810 });
+        _appWindow.SetIcon(System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "SpoofGUI.ico"));
+        _appWindow.Closing += OnAppWindowClosing;
 
-        if (appWindow.TitleBar is { } tb)
+        if (_appWindow.TitleBar is { } tb)
         {
             _titleBar = tb;
             tb.ExtendsContentIntoTitleBar = true;
@@ -35,10 +49,66 @@ public sealed partial class MainWindow : Window
 
         var savedTheme = App.Services.GetRequiredService<SettingsRepository>().Get("theme") ?? "dark";
         ApplyTheme(savedTheme);
+
+        try { InitTray(); }
+        catch (Exception e) { AppLog.Error($"tray init failed: {e.Message}"); }
     }
 
-    private void OnClosed(object sender, WindowEventArgs args)
+    private void InitTray()
     {
+        var ico = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "SpoofGUI.ico");
+        _tray = new TrayIconHost(ico, "SpoofGUI");
+        _tray.LeftClick += () => _dispatcher.TryEnqueue(ShowPanel);
+        _tray.RightClick += () => _dispatcher.TryEnqueue(ShowPanel);
+        _tray.DoubleClick += () => _dispatcher.TryEnqueue(ShowFromTray);
+    }
+
+    private void ShowPanel()
+    {
+        try
+        {
+            _panel ??= new TrayPanelWindow();
+            _panel.ShowPanel();
+        }
+        catch (Exception e)
+        {
+            AppLog.Warn($"tray panel: {e.Message}");
+            ShowFromTray();
+        }
+    }
+
+    public void ShowFromTray() => _dispatcher.TryEnqueue(() =>
+    {
+        _appWindow.Show();
+        _appWindow.MoveInZOrderAtTop();
+        Activate();
+        try { SetForegroundWindow(_hwnd); } catch { }
+    });
+
+    public void QuitApp()
+    {
+        _exiting = true;
+        Cleanup();
+        Application.Current.Exit();
+    }
+
+    private void OnAppWindowClosing(AppWindow sender, AppWindowClosingEventArgs args)
+    {
+        if (_exiting) return;
+        args.Cancel = true;
+        sender.Hide();
+    }
+
+    private void OnClosed(object sender, WindowEventArgs args) => Cleanup();
+
+    private void Cleanup()
+    {
+        if (_cleaned) return;
+        _cleaned = true;
+
+        try { _tray?.Dispose(); } catch { }
+        try { _panel?.Close(); } catch { }
+        try { App.Services.GetRequiredService<ConnectionGuard>().Dispose(); } catch { }
         try { App.Services.GetRequiredService<SingBoxTunnelService>().Stop(); } catch { }
         try { App.Services.GetRequiredService<XrayCoreService>().Dispose(); } catch { }
         try { App.Services.GetRequiredService<EngineSupervisor>().Stop(); } catch { }

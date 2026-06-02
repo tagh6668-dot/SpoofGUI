@@ -39,7 +39,7 @@ public sealed record SniScanResult(
 
 public sealed class SniScannerService
 {
-    public const int MaxDomains = 500;
+    public const int MaxDomains = 1000;
     public const int DefaultConcurrency = 50;
     public static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(3);
 
@@ -66,6 +66,24 @@ public sealed class SniScannerService
         }
 
         return false;
+    }
+
+    private static IReadOnlyList<string>? _builtinList;
+
+    public static IReadOnlyList<string> BuiltinCloudflareList()
+    {
+        if (_builtinList is not null) return _builtinList;
+
+        var assembly = typeof(SniScannerService).Assembly;
+        var name = assembly.GetManifestResourceNames()
+            .FirstOrDefault(n => n.EndsWith("scan-snis.txt", StringComparison.OrdinalIgnoreCase));
+
+        if (name is null)
+            return _builtinList = [];
+
+        using var stream = assembly.GetManifestResourceStream(name)!;
+        using var reader = new StreamReader(stream);
+        return _builtinList = ParseDomains(reader.ReadToEnd());
     }
 
     public static IReadOnlyList<string> ParseDomains(string text)

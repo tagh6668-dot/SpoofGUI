@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Microsoft.Data.Sqlite;
 using SpoofGUI.Models;
 
@@ -6,7 +7,15 @@ namespace SpoofGUI.Database;
 public sealed class V2RayProfileRepository
 {
     private readonly DatabaseConnection _db;
+    private readonly ConcurrentDictionary<long, string> _pings = new();
     public V2RayProfileRepository(DatabaseConnection db) => _db = db;
+
+    public void RememberPing(long id, string ping)
+    {
+        if (id == 0) return;
+        if (string.IsNullOrEmpty(ping)) _pings.TryRemove(id, out _);
+        else _pings[id] = ping;
+    }
 
     public IReadOnlyList<V2RayProfile> All()
     {
@@ -17,7 +26,12 @@ SELECT id, name, protocol, mode, address, port, user_id, security, transport, se
 FROM v2ray_profiles ORDER BY updated_at DESC, id DESC;";
         var list = new List<V2RayProfile>();
         using var r = cmd.ExecuteReader();
-        while (r.Read()) list.Add(Map(r));
+        while (r.Read())
+        {
+            var profile = Map(r);
+            profile.Ping = _pings.GetValueOrDefault(profile.Id, "");
+            list.Add(profile);
+        }
         return list;
     }
 
@@ -63,6 +77,7 @@ SELECT CASE WHEN $id IS NULL THEN last_insert_rowid() ELSE $id END;";
         cmd.CommandText = "DELETE FROM v2ray_profiles WHERE id = $id;";
         cmd.Parameters.AddWithValue("$id", id);
         cmd.ExecuteNonQuery();
+        _pings.TryRemove(id, out _);
     }
 
     private static V2RayProfile Map(SqliteDataReader r) => new()

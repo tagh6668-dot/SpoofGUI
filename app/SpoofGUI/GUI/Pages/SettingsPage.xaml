@@ -160,6 +160,29 @@
                                       MinWidth="0"
                                       Toggled="OnFastModeToggled" />
                     </Grid>
+
+                    <Border Style="{StaticResource SectionDivider}" Margin="0" />
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Text="Kill switch" Style="{StaticResource TextBody}" />
+                            <TextBlock Text="If a connected core (SNI engine, xray, or sing-box) drops unexpectedly, block all outbound traffic until you disconnect — prevents leaks. Cleared automatically on disconnect or app exit."
+                                       Style="{StaticResource TextCaption}"
+                                       TextWrapping="Wrap"
+                                       MaxWidth="560" />
+                        </StackPanel>
+                        <ToggleSwitch x:Name="KillSwitchToggle"
+                                      Grid.Column="1"
+                                      VerticalAlignment="Center"
+                                      OnContent=""
+                                      OffContent=""
+                                      MinWidth="0"
+                                      Toggled="OnKillSwitchToggled" />
+                    </Grid>
                 </StackPanel>
             </Border>
 
@@ -278,16 +301,25 @@
                                              Visibility="Collapsed"
                                              Padding="0" />
                         </StackPanel>
-                        <Button x:Name="CheckUpdatesButton"
-                                Grid.Column="1"
-                                Style="{StaticResource SecondaryButton}"
-                                VerticalAlignment="Top"
-                                Click="OnCheckUpdates">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <SymbolIcon Symbol="Sync" Foreground="{StaticResource TextPrimary}" />
-                                <TextBlock Text="check now" />
-                            </StackPanel>
-                        </Button>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Top">
+                            <Button x:Name="InstallUpdateButton"
+                                    Style="{StaticResource PrimaryButton}"
+                                    Visibility="Collapsed"
+                                    Click="OnInstallUpdate">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <SymbolIcon Symbol="Download" Foreground="#15181E" />
+                                    <TextBlock x:Name="InstallUpdateLabel" Text="download &amp; install" />
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="CheckUpdatesButton"
+                                    Style="{StaticResource SecondaryButton}"
+                                    Click="OnCheckUpdates">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <SymbolIcon Symbol="Sync" Foreground="{StaticResource TextPrimary}" />
+                                    <TextBlock Text="check now" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
                     </Grid>
                     <Border Style="{StaticResource SectionDivider}" Margin="0" />
                     <Grid>
@@ -310,6 +342,36 @@
                                       MinWidth="0"
                                       Toggled="OnCheckOnLaunchToggled" />
                     </Grid>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <StackPanel Spacing="16">
+                    <StackPanel Spacing="3">
+                        <TextBlock Text="Backup" Style="{StaticResource TextH2}" />
+                        <TextBlock Text="Export all SNI profiles and V2Ray configs to a JSON file, or import them on another machine. Imported profiles are added (existing ones are kept)."
+                                   Style="{StaticResource TextBodyMuted}"
+                                   MaxWidth="560" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Button x:Name="ExportProfilesButton"
+                                Style="{StaticResource PrimaryButton}"
+                                Click="OnExportProfiles">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <SymbolIcon Symbol="Save" Foreground="#15181E" />
+                                <TextBlock Text="export" />
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="ImportProfilesButton"
+                                Style="{StaticResource SecondaryButton}"
+                                Click="OnImportProfiles">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <SymbolIcon Symbol="OpenFile" Foreground="{StaticResource TextPrimary}" />
+                                <TextBlock Text="import" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                    <TextBlock x:Name="BackupStatus" Style="{StaticResource TextCaption}" />
                 </StackPanel>
             </Border>
 

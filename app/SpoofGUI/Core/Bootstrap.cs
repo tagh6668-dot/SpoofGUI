@@ -28,6 +28,8 @@ internal static class Bootstrap
         services.AddSingleton<SingBoxTunnelService>();
         services.AddSingleton<SniScannerService>();
         services.AddSingleton<SniListService>();
+        services.AddSingleton<ProfileBackupService>();
+        services.AddSingleton<ConnectionGuard>();
 
         services.AddSingleton<MainPageViewModel>();
         services.AddTransient<SettingsPageViewModel>();
@@ -38,6 +40,7 @@ internal static class Bootstrap
 
         var sp = services.BuildServiceProvider();
         sp.GetRequiredService<DatabaseInitializer>().EnsureCreated();
+        sp.GetRequiredService<ConnectionGuard>();
         return sp;
     }
 }

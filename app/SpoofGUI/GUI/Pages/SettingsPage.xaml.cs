@@ -3,6 +3,9 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using SpoofGUI.Core;
 using SpoofGUI.GUI.ViewModels;
+using Windows.Storage;
+using Windows.Storage.Pickers;
+using WinRT.Interop;
 
 namespace SpoofGUI.GUI.Pages;
 
@@ -29,6 +32,7 @@ public sealed partial class SettingsPage : Page
         AllowInsecureToggle.IsOn = _vm.XrayAllowInsecure;
         CheckOnLaunchToggle.IsOn = _vm.CheckUpdatesOnLaunch;
         FastModeToggle.IsOn = _vm.FastMode;
+        KillSwitchToggle.IsOn = _vm.KillSwitch;
         LogLevelCombo.SelectedIndex = LogLevelToIndex(_vm.XrayLogLevel);
         DefaultModeCombo.SelectedIndex = ModeToIndex(_vm.V2RayMode);
         RemoteDnsBox.Text = _vm.RemoteDns;
@@ -183,7 +187,63 @@ public sealed partial class SettingsPage : Page
         UpdateReleaseLink.NavigateUri = new Uri(res.ReleaseUrl);
         UpdateReleaseLink.Content = res.IsUpdateAvailable ? "open new release" : "open latest release";
         UpdateReleaseLink.Visibility = Visibility.Visible;
+        InstallUpdateButton.Visibility = res.IsUpdateAvailable ? Visibility.Visible : Visibility.Collapsed;
         CheckUpdatesButton.IsEnabled = true;
+    }
+
+    private void OnKillSwitchToggled(object sender, RoutedEventArgs e)
+    {
+        if (_initializing) return;
+        _vm.KillSwitch = KillSwitchToggle.IsOn;
+    }
+
+    private async void OnInstallUpdate(object sender, object e)
+    {
+        InstallUpdateButton.IsEnabled = false;
+        InstallUpdateLabel.Text = "downloading…";
+        var res = await _vm.DownloadAndInstallLatestAsync();
+        if (res == "INSTALL_LAUNCHED")
+        {
+            UpdateLastCheck.Text = "installer launched — closing SpoofGUI…";
+            App.CurrentWindow?.QuitApp();
+            return;
+        }
+        UpdateLastCheck.Text = res;
+        InstallUpdateLabel.Text = "download & install";
+        InstallUpdateButton.IsEnabled = true;
+    }
+
+    private async void OnExportProfiles(object sender, object e)
+    {
+        try
+        {
+            var picker = new FileSavePicker();
+            InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.CurrentWindow));
+            picker.SuggestedFileName = "spoofgui-backup";
+            picker.FileTypeChoices.Add("JSON backup", new List<string> { ".json" });
+            var file = await picker.PickSaveFileAsync();
+            if (file is null) { BackupStatus.Text = "export cancelled"; return; }
+            var json = App.Services.GetRequiredService<ProfileBackupService>().ExportJson();
+            await FileIO.WriteTextAsync(file, json);
+            BackupStatus.Text = $"exported to {file.Name}";
+        }
+        catch (Exception ex) { BackupStatus.Text = $"export failed: {ex.Message}"; }
+    }
+
+    private async void OnImportProfiles(object sender, object e)
+    {
+        try
+        {
+            var picker = new FileOpenPicker();
+            InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.CurrentWindow));
+            picker.FileTypeFilter.Add(".json");
+            var file = await picker.PickSingleFileAsync();
+            if (file is null) { BackupStatus.Text = "import cancelled"; return; }
+            var json = await FileIO.ReadTextAsync(file);
+            var (spoof, v2ray) = App.Services.GetRequiredService<ProfileBackupService>().ImportJson(json);
+            BackupStatus.Text = $"imported {spoof} SNI profile(s), {v2ray} V2Ray config(s)";
+        }
+        catch (Exception ex) { BackupStatus.Text = $"import failed: {ex.Message}"; }
     }
 
     private void OnThemeChanged(object sender, SelectionChangedEventArgs e)

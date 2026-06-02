@@ -146,14 +146,14 @@ public sealed class XrayCoreService : IDisposable
             proc.BeginOutputReadLine();
             proc.BeginErrorReadLine();
 
-            await WaitForLoopbackPortAsync(port, TimeSpan.FromSeconds(5), ct);
+            await WaitForLoopbackPortAsync(port, TimeSpan.FromSeconds(4), ct);
 
             using var handler = new HttpClientHandler
             {
                 Proxy = new WebProxy($"socks5://127.0.0.1:{port}"),
                 UseProxy = true,
             };
-            using var http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(8) };
+            using var http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(5) };
             const string testUrl = "http://cp.cloudflare.com/generate_204";
 
             async Task<long> MeasureAsync()
@@ -166,20 +166,15 @@ public sealed class XrayCoreService : IDisposable
                 return stopwatch.ElapsedMilliseconds;
             }
 
-            try { await MeasureAsync(); } catch { }
-
-            var best = long.MaxValue;
             Exception? last = null;
-            for (var i = 0; i < 3; i++)
+            for (var i = 0; i < 2; i++)
             {
-                try { best = Math.Min(best, await MeasureAsync()); }
+                try { return await MeasureAsync(); }
+                catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
                 catch (Exception e) { last = e; }
             }
 
-            if (best == long.MaxValue)
-                throw last ?? new InvalidOperationException("no response through proxy");
-
-            return best;
+            throw last ?? new InvalidOperationException("no response through proxy");
         }
         finally
         {
@@ -211,7 +206,7 @@ public sealed class XrayCoreService : IDisposable
             }
             catch
             {
-                await Task.Delay(150, ct);
+                await Task.Delay(50, ct);
             }
         }
 
@@ -513,11 +508,15 @@ public sealed class XrayCoreService : IDisposable
                 System.Net.Sockets.SocketType.Dgram,
                 System.Net.Sockets.ProtocolType.Udp);
             socket.Connect(IPAddress.Parse(remoteIp), remotePort);
-            return (socket.LocalEndPoint as IPEndPoint)?.Address.ToString();
+            var ip = (socket.LocalEndPoint as IPEndPoint)?.Address.ToString();
+            if (string.IsNullOrWhiteSpace(ip) || NetworkHelper.IsVirtualInterface(ip))
+                return NetworkHelper.GetLocalPhysicalIPAddress();
+
+            return ip;
         }
         catch
         {
-            return null;
+            return NetworkHelper.GetLocalPhysicalIPAddress();
         }
     }
 

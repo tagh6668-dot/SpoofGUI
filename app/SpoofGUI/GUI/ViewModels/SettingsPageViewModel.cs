@@ -1,6 +1,9 @@
+using System.Diagnostics;
+using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
@@ -58,6 +61,12 @@ public sealed class SettingsPageViewModel
     {
         get => _app.FastMode;
         set => _app.FastMode = value;
+    }
+
+    public bool KillSwitch
+    {
+        get => _app.KillSwitch;
+        set => _app.KillSwitch = value;
     }
 
     public string RemoteDns { get => _app.RemoteDns; set => _app.RemoteDns = value; }
@@ -170,6 +179,46 @@ public sealed class SettingsPageViewModel
         {
             _log.LogWarning(e, "update check failed");
             return new UpdateCheckResult($"check failed: {e.Message}", LastUpdateCheckText(), ReleasesPageUrl, false);
+        }
+    }
+
+    public async Task<string> DownloadAndInstallLatestAsync()
+    {
+        var arch = RuntimeInformation.ProcessArchitecture == Architecture.X86 ? "x86" : "amd64";
+        var assetName = $"SpoofGUI-Setup-{arch}.exe";
+        try
+        {
+            using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(5) };
+            http.DefaultRequestHeaders.UserAgent.ParseAdd("SpoofGUI");
+            using var doc = JsonDocument.Parse(await http.GetStringAsync(ReleasesApiUrl));
+            var release = GetLatestPublishedRelease(doc.RootElement);
+            if (release is null) return "no published release to install";
+
+            string? url = null;
+            if (release.Value.TryGetProperty("assets", out var assets))
+            {
+                foreach (var asset in assets.EnumerateArray())
+                {
+                    if (asset.GetProperty("name").GetString() == assetName)
+                    {
+                        url = asset.GetProperty("browser_download_url").GetString();
+                        break;
+                    }
+                }
+            }
+            if (url is null) return $"installer {assetName} not found in latest release";
+
+            var target = Path.Combine(Path.GetTempPath(), assetName);
+            var bytes = await http.GetByteArrayAsync(url);
+            await File.WriteAllBytesAsync(target, bytes);
+
+            Process.Start(new ProcessStartInfo { FileName = target, UseShellExecute = true });
+            return "INSTALL_LAUNCHED";
+        }
+        catch (Exception e)
+        {
+            _log.LogWarning(e, "update download failed");
+            return $"download failed: {e.Message}";
         }
     }
 

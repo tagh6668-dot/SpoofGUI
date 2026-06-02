@@ -16,15 +16,20 @@ public sealed class V2RayPageViewModel
     private readonly SingBoxTunnelService _tunnel;
     private readonly ProxyPortSettings _ports;
     private readonly AppSettings _appSettings;
+    private readonly ConnectionGuard _guard;
 
-    public V2RayPageViewModel(V2RayProfileRepository profiles, XrayCoreService xray, SingBoxTunnelService tunnel, ProxyPortSettings ports, AppSettings appSettings)
+    public V2RayPageViewModel(V2RayProfileRepository profiles, XrayCoreService xray, SingBoxTunnelService tunnel, ProxyPortSettings ports, AppSettings appSettings, ConnectionGuard guard)
     {
         _profiles = profiles;
         _xray = xray;
         _tunnel = tunnel;
         _ports = ports;
         _appSettings = appSettings;
+        _guard = guard;
     }
+
+    public void ArmKillSwitch() => _guard.ArmV2Ray();
+    public void DisarmKillSwitch() => _guard.DisarmV2Ray();
 
     public int V2RayModeIndex => _appSettings.V2RayMode switch
     {
@@ -77,7 +82,8 @@ public sealed class V2RayPageViewModel
     public void Delete(V2RayProfile profile) => _profiles.Delete(profile.Id);
     public Task StartAsync(V2RayProfile profile) => _xray.StartAsync(profile);
     public Task StopAsync() => _xray.StopAsync();
-    public Task<long> TestRealDelayAsync(V2RayProfile profile) => _xray.TestRealDelayAsync(profile);
+    public Task<long> TestRealDelayAsync(V2RayProfile profile, CancellationToken ct = default) => _xray.TestRealDelayAsync(profile, ct);
+    public void RememberPing(long id, string ping) => _profiles.RememberPing(id, ping);
 }
 
 public sealed record ImportResult(IReadOnlyList<V2RayProfile> Imported, int Failed);

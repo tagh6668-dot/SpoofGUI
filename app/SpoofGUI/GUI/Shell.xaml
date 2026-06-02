@@ -99,6 +99,21 @@
                             <TextBlock Text="SNI Scanner" Style="{StaticResource TextBody}" />
                         </StackPanel>
                     </Button>
+                    <Button x:Name="NavConnections"
+                            Click="OnNavConnections"
+                            HorizontalContentAlignment="Left"
+                            HorizontalAlignment="Stretch"
+                            Padding="12,0"
+                            MinHeight="40"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            CornerRadius="3"
+                            ix:PressScale.IsEnabled="True">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <SymbolIcon Symbol="Link" Foreground="{StaticResource TextPrimary}" />
+                            <TextBlock Text="Connections" Style="{StaticResource TextBody}" />
+                        </StackPanel>
+                    </Button>
                     <Button x:Name="NavSettings"
                             Click="OnNavSettings"
                             HorizontalContentAlignment="Left"

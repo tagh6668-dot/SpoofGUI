@@ -3,6 +3,8 @@ using System.Runtime.InteropServices;
 
 namespace SpoofGUI.Core;
 
+public sealed record TcpConnectionRow(string Remote, string Local, string State);
+
 internal static class NetStats
 {
     public static uint CountEstablishedOnLocalPort(int port)
@@ -22,6 +24,27 @@ internal static class NetStats
         catch
         {
             return 0;
+        }
+    }
+
+    public static IReadOnlyList<TcpConnectionRow> ActiveConnections(IReadOnlyCollection<int> localPorts)
+    {
+        try
+        {
+            var props = IPGlobalProperties.GetIPGlobalProperties();
+            return props.GetActiveTcpConnections()
+                .Where(c => localPorts.Contains(c.LocalEndPoint.Port))
+                .Select(c => new TcpConnectionRow(
+                    $"{c.RemoteEndPoint.Address}:{c.RemoteEndPoint.Port}",
+                    $"{c.LocalEndPoint.Address}:{c.LocalEndPoint.Port}",
+                    c.State.ToString()))
+                .OrderByDescending(c => c.State == nameof(TcpState.Established))
+                .ThenBy(c => c.Remote, StringComparer.Ordinal)
+                .ToList();
+        }
+        catch
+        {
+            return [];
         }
     }
 

@@ -11,8 +11,8 @@ Thank you for your interest in contributing to SpoofGUI! We welcome bug reports,
 
 ### 2. Development Setup
 Please read the [Build Guide](docs/BUILD.md) to set up your local development environment. You will need:
-* **.NET 10 SDK** (for the WinUI 3 frontend)
-* **Python 3.10+** (with `pip` and `pyinstaller` for compiling the SNI-Spoofing engine)
+* **.NET 10 SDK** (for the WinUI 3 frontend and the in-process C# SNI engine)
+* **Visual Studio C++ build tools** (for the native launcher)
 * **Inno Setup 6** (for building installers)
 
 To build the project locally, close any running instances of `SpoofGUI.exe` and execute:
@@ -22,7 +22,7 @@ build-release.bat
 
 ### 3. Pull Request Guidelines
 * Keep pull requests focused on a single issue or feature.
-* Write clean, commented code and follow the existing coding conventions (C# standard coding style for WinUI 3, PEP 8 for the Python engine source).
+* Write clean, self-explanatory code and follow the existing coding conventions (C# standard coding style for WinUI 3)
 * Ensure that the local release build (`build-release.bat`) passes without errors or warnings before submitting a pull request.
 * Update documentation (`docs/`) if your changes introduce new configurations, behaviors, or prerequisites.
 

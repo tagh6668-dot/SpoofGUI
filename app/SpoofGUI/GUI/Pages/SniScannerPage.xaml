@@ -54,15 +54,38 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                        <ToggleSwitch x:Name="VerifyHttpToggle"
-                                      OnContent=""
-                                      OffContent=""
-                                      MinWidth="0"
-                                      VerticalAlignment="Center" />
-                        <TextBlock Text="verify HTTP"
-                                   Style="{StaticResource TextBody}"
-                                   VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="0" Spacing="8" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                            <ToggleSwitch x:Name="VerifyHttpToggle"
+                                          OnContent=""
+                                          OffContent=""
+                                          MinWidth="0"
+                                          VerticalAlignment="Center" />
+                            <TextBlock Text="verify HTTP"
+                                       Style="{StaticResource TextBody}"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                            <ToggleSwitch x:Name="IncludeProfilesToggle"
+                                          OnContent=""
+                                          OffContent=""
+                                          MinWidth="0"
+                                          VerticalAlignment="Center" />
+                            <TextBlock Text="include Configs profiles"
+                                       Style="{StaticResource TextBody}"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                            <ToggleSwitch x:Name="IncludeBuiltinToggle"
+                                          OnContent=""
+                                          OffContent=""
+                                          MinWidth="0"
+                                          VerticalAlignment="Center" />
+                            <TextBlock x:Name="BuiltinToggleLabel"
+                                       Text="scan built-in Cloudflare list"
+                                       Style="{StaticResource TextBody}"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
                     </StackPanel>
 
                     <StackPanel Grid.Column="1"
@@ -109,11 +132,21 @@
                        Text="results"
                        Style="{StaticResource TextH2}"
                        VerticalAlignment="Center" />
-            <TextBlock x:Name="ResultSummary"
-                       Grid.Column="1"
-                       Style="{StaticResource TextCaption}"
-                       VerticalAlignment="Center"
-                       Text="" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
+                <TextBlock x:Name="ResultSummary"
+                           Style="{StaticResource TextCaption}"
+                           VerticalAlignment="Center"
+                           Text="" />
+                <Button x:Name="UseBestButton"
+                        Style="{StaticResource PrimaryButton}"
+                        IsEnabled="False"
+                        Click="OnUseBest">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <SymbolIcon Symbol="Accept" Foreground="#15181E" />
+                        <TextBlock Text="auto-pick best → active profile" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
         </Grid>
 
         <ListView x:Name="ResultsList"

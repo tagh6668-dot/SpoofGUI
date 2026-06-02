@@ -20,16 +20,32 @@ SOCKS / HTTP ports default to 20882 / 20883 and are configurable on the Settings
 
 <img width="1264" height="802" alt="image" src="https://github.com/user-attachments/assets/4266a7de-bc91-484a-9efc-5b2e6ca03e78" /> 
 
+## Download
 
+Latest release — no install needed, just download and run (the Portable zip extracts to a clean root with a single `SpoofGUI.exe` launcher):
+
+| Architecture | Setup installer | Portable zip |
+| --- | --- | --- |
+| **x64** (amd64) | [SpoofGUI-Setup-amd64.exe](https://github.com/ZethRise/SpoofGUI/releases/latest/download/SpoofGUI-Setup-amd64.exe) | [SpoofGUI-Portable-amd64.zip](https://github.com/ZethRise/SpoofGUI/releases/latest/download/SpoofGUI-Portable-amd64.zip) |
+| **x86** (32-bit) | [SpoofGUI-Setup-x86.exe](https://github.com/ZethRise/SpoofGUI/releases/latest/download/SpoofGUI-Setup-x86.exe) | [SpoofGUI-Portable-x86.zip](https://github.com/ZethRise/SpoofGUI/releases/latest/download/SpoofGUI-Portable-x86.zip) |
+
+All releases and changelogs: [github.com/ZethRise/SpoofGUI/releases](https://github.com/ZethRise/SpoofGUI/releases). Requires admin (UAC) at runtime; ARM64 is not supported (no WinDivert driver).
 
 ## Current Status
 
-- App version: `1.0.3`
+- App version: `1.0.4`
 - Frontend: C# / .NET 10 / WinUI 3
 - Backends:
-  - **Python SNI-Spoofing engine** (`engine\SpoofGUI.SniSpoofEngine.exe`) — bundled PyInstaller build of the vendored upstream tool; performs the WinDivert + fake ClientHello injection. Resilient bidirectional relay (a dropped connection never kills the engine) + optional Fast mode (low-latency sockets), adapted from [atarevals/SNI-Spoofing](https://github.com/atarevals/SNI-Spoofing)
+  - **Pure-C# SNI-Spoofing engine** (in-process, `app/SpoofGUI/Engine/`) — no Python. Native WinDivert P/Invoke + fake ClientHello injection ported from [patterniha/SNI-Spoofing](https://github.com/patterniha/SNI-Spoofing). Resilient bidirectional relay (a dropped connection never kills the engine) + optional Fast mode (low-latency sockets), adapted from [atarevals/SNI-Spoofing](https://github.com/atarevals/SNI-Spoofing)
   - **C# Xray manager** — generates config and starts `xray.exe` for Proxy / System Proxy modes
   - **C# sing-box manager** — runs `sing-box.exe` as a full core (tun inbound + proxy outbound) for Tunnel mode
+- **System tray**: closing the window minimizes to the tray (engines keep running); a designed flyout shows live status/stats, a profile switcher, and lets you connect/disconnect the SNI engine and V2Ray without opening the window. Quit from the tray stops everything
+- **Kill switch** (Settings): if a connected core drops unexpectedly, all outbound traffic is blocked until you disconnect — no leaks. Cleared on disconnect/exit
+- **Live Connections page**: real-time TCP sessions on the SNI listener and proxy ports
+- **Profile backup**: export/import all SNI + V2Ray profiles as JSON (Settings → Backup)
+- **In-app updates**: check + one-click download & install the matching Setup from the latest GitHub release
+- **Auto-pick best SNI**: after a scan, set the active profile's Fake SNI to the lowest-latency Cloudflare result in one click
+- V2Ray list supports multi-select (delete many at once); ping runs in parallel for fast results
 - Core binaries (`xray.exe`, `sing-box.exe`, `wintun.dll`) are not committed; the release build fetches the architecture-correct ones automatically
 - Runtime package: self-contained Windows build, no Python / Xray / sing-box / .NET install needed on target PCs
 - Builds for **amd64** and **x86**; each ships a Setup installer and a clean Portable `.zip` (a launcher at the root + an `app\` folder). ARM64 is not shipped — WinDivert has no ARM64 driver
@@ -47,7 +63,7 @@ SOCKS / HTTP ports default to 20882 / 20883 and are configurable on the Settings
     - **System Proxy** — flips Windows Internet Settings to route HTTP/HTTPS apps through xray's HTTP inbound; reverted on disconnect.
   - **Ping** — real-delay test: measures latency of an HTTP request routed through the selected config.
   - Real-time uptime, download / upload rate, total bytes.
-- **SNI Scanner** — bulk-resolve hostnames, flag the ones fronted by Cloudflare (good Fake SNI targets), and create a Configs profile from a result in one click. Domain-check logic ported from [Rainman69/SNISPF](https://github.com/Rainman69/SNISPF) (MIT).
+- **SNI Scanner** — bulk-resolve hostnames, flag the ones fronted by Cloudflare (good Fake SNI targets), and create a Configs profile from a result in one click. Scans pasted hostnames, your saved Configs profiles, and/or a bundled ~640-host Cloudflare candidate list (from [therealaleph/sni-spoofing-rust](https://github.com/therealaleph/sni-spoofing-rust), `data/scan-snis.txt`). Domain-check logic ported from [Rainman69/SNISPF](https://github.com/Rainman69/SNISPF) (MIT).
 - **Settings** — dark / light theme, SOCKS / HTTP proxy ports, V2Ray mode, **DNS control** (remote / direct / bootstrap servers + strategy, used in Tunnel mode), **Fast mode** (low-latency engine sockets for gaming / real-time), allow-insecure-TLS, xray log level, check-for-updates-on-launch, open app-data folder, GitHub-based update check.
 - **Logs** — auto-scrolling live output; copy + clear; full engine / core output captured.
 - **Startup** — instant splash window while the app loads; ReadyToRun-compiled release builds; press feedback on buttons throughout.
@@ -56,11 +72,10 @@ SOCKS / HTTP ports default to 20882 / 20883 and are configurable on the Settings
 
 | Path | Purpose |
 | --- | --- |
-| [app/SpoofGUI/](app/SpoofGUI/) | WinUI app: UI, database, engine supervisor, system-proxy helper |
-| [app/SpoofGUI/EngineSource/](app/SpoofGUI/EngineSource/) | Vendored Python SNI-Spoofing source (tracked directly), built into the bundled engine exe |
+| [app/SpoofGUI/](app/SpoofGUI/) | WinUI app: UI, database, in-process C# SNI engine, proxy-core managers, system-proxy helper |
 | [installer/](installer/) | Inno Setup script (Setup installer) |
 | [launcher/](launcher/) | Native launcher that keeps the portable/installed root clean |
-| [scripts/](scripts/) | Build orchestrator + PyInstaller wrapper |
+| [scripts/](scripts/) | Build orchestrator |
 | [docs/](docs/) | Build, product, and design documentation |
 
 ## Build Release
@@ -82,7 +97,7 @@ dist\SpoofGUI-Portable-x86.zip
 
 The portable zip extracts to a clean root: just `SpoofGUI.exe` (a launcher) plus an `app\` folder holding everything else — download and run, no install.
 
-The build needs `dotnet`, a Python matching each target architecture (a 32-bit Python for x86), Visual Studio C++ build tools, Inno Setup 6, and internet access (it fetches the architecture-correct `xray.exe`, `sing-box.exe`, and `wintun.dll`). ARM64 is not shipped — the WinDivert driver has no ARM64 build. See [docs/BUILD.md](docs/BUILD.md) for full notes.
+The build needs `dotnet`, Visual Studio C++ build tools (for the native launcher), Inno Setup 6, and internet access (it fetches the architecture-correct `xray.exe`, `sing-box.exe`, and `wintun.dll`). No Python — the SNI engine is pure C# and compiles with the app. ARM64 is not shipped — the WinDivert driver has no ARM64 build. See [docs/BUILD.md](docs/BUILD.md) for full notes.
 
 ## Documentation
 

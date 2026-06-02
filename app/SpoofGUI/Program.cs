@@ -19,6 +19,17 @@ public static class Program
             return;
         }
 
+        AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+        {
+            CrashLog.Write("UnhandledException", e.ExceptionObject as Exception);
+            AppLog.Error($"FATAL: {(e.ExceptionObject as Exception)?.Message}");
+        };
+        System.Threading.Tasks.TaskScheduler.UnobservedTaskException += (_, e) =>
+        {
+            CrashLog.Write("UnobservedTaskException", e.Exception);
+            AppLog.Error($"FATAL task: {e.Exception.Message}");
+        };
+
         XamlCheckProcessRequirements();
         WinRT.ComWrappersSupport.InitializeComWrappers();
         Microsoft.UI.Xaml.Application.Start(p =>
