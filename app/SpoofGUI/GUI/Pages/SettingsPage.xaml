@@ -283,6 +283,119 @@
             <Border Style="{StaticResource Card}">
                 <StackPanel Spacing="16">
                     <StackPanel Spacing="3">
+                        <TextBlock Text="Diagnostics" Style="{StaticResource TextH2}" />
+                        <TextBlock Text="WinDivert status and a support bundle for portable-build reports."
+                                   Style="{StaticResource TextBodyMuted}" />
+                    </StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Spacing="2">
+                            <TextBlock Text="WinDivert" Style="{StaticResource TextBody}" />
+                            <TextBlock x:Name="WinDivertStatusText"
+                                       Text="checking"
+                                       Style="{StaticResource TextMono}"
+                                       FontSize="12"
+                                       Foreground="{StaticResource TextSecondary}"
+                                       TextWrapping="Wrap" />
+                            <TextBlock x:Name="PortableStatusText"
+                                       Text="portable: checking"
+                                       Style="{StaticResource TextCaption}"
+                                       TextWrapping="Wrap" />
+                            <TextBlock Text="WinDivert is downloaded from the official basil00/WinDivert release when needed. Some antivirus tools flag it as dual-use because packet capture/injection drivers can be used by security tools and by intruders."
+                                       Style="{StaticResource TextCaption}"
+                                       TextWrapping="Wrap"
+                                       MaxWidth="620" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                            <Button Style="{StaticResource SecondaryButton}" Click="OnRefreshDiagnostics">
+                                <TextBlock Text="refresh" />
+                            </Button>
+                            <Button Style="{StaticResource SecondaryButton}" Click="OnRunHealthCheck">
+                                <TextBlock Text="health check" />
+                            </Button>
+                            <Button Style="{StaticResource PrimaryButton}" Click="OnExportDiagnostics">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <SymbolIcon Symbol="Save" Foreground="#15181E" />
+                                    <TextBlock Text="export bundle" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock x:Name="DiagnosticsStatus" Style="{StaticResource TextCaption}" />
+                    <TextBox x:Name="HealthCheckOutput"
+                             Style="{StaticResource FieldTextBox}"
+                             AcceptsReturn="True"
+                             TextWrapping="NoWrap"
+                             FontFamily="{StaticResource FontFamilyMono}"
+                             FontSize="12"
+                             MaxHeight="180"
+                             Visibility="Collapsed"
+                             IsReadOnly="True" />
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <StackPanel Spacing="16">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Spacing="3">
+                            <TextBlock Text="Connection test" Style="{StaticResource TextH2}" />
+                            <TextBlock Text="Compares egress IP through the local proxy against a direct connection, and inspects DNS resolvers for leaks."
+                                       Style="{StaticResource TextBodyMuted}"
+                                       MaxWidth="620" />
+                        </StackPanel>
+                        <Button x:Name="ConnTestButton"
+                                Grid.Column="1"
+                                VerticalAlignment="Top"
+                                Style="{StaticResource PrimaryButton}"
+                                Click="OnRunConnectionTest">
+                            <Grid>
+                                <StackPanel x:Name="ConnTestContent" Orientation="Horizontal" Spacing="8">
+                                    <SymbolIcon Symbol="Globe" Foreground="#15181E" />
+                                    <TextBlock Text="test connection" />
+                                </StackPanel>
+                                <ProgressRing x:Name="ConnTestSpinner"
+                                              Width="18" Height="18"
+                                              Foreground="#15181E"
+                                              IsActive="False"
+                                              Visibility="Collapsed" />
+                            </Grid>
+                        </Button>
+                    </Grid>
+
+                    <StackPanel x:Name="ConnTestResults" Spacing="8" Visibility="Collapsed">
+                        <TextBlock x:Name="ConnTestStatus" Style="{StaticResource TextBody}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                        <Grid ColumnSpacing="16" RowSpacing="6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="proxied egress" Style="{StaticResource TextCaption}" />
+                            <TextBlock Grid.Row="0" Grid.Column="1" x:Name="ConnProxied" Style="{StaticResource TextMono}" FontSize="12" Foreground="{StaticResource AccentBase}" TextWrapping="Wrap" />
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="direct egress" Style="{StaticResource TextCaption}" />
+                            <TextBlock Grid.Row="1" Grid.Column="1" x:Name="ConnDirect" Style="{StaticResource TextMono}" FontSize="12" Foreground="{StaticResource TextSecondary}" TextWrapping="Wrap" />
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="DNS servers" Style="{StaticResource TextCaption}" />
+                            <TextBlock Grid.Row="2" Grid.Column="1" x:Name="ConnDns" Style="{StaticResource TextMono}" FontSize="12" Foreground="{StaticResource TextSecondary}" TextWrapping="Wrap" />
+                        </Grid>
+                        <TextBlock x:Name="ConnDnsNote" Style="{StaticResource TextCaption}" Foreground="{StaticResource TextTertiary}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <StackPanel Spacing="16">
+                    <StackPanel Spacing="3">
                         <TextBlock Text="Updates" Style="{StaticResource TextH2}" />
                         <TextBlock Text="SpoofGUI checks the GitHub releases channel."
                                    Style="{StaticResource TextBodyMuted}" />

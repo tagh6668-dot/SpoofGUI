@@ -112,6 +112,7 @@ public sealed partial class MainWindow : Window
         try { App.Services.GetRequiredService<SingBoxTunnelService>().Stop(); } catch { }
         try { App.Services.GetRequiredService<XrayCoreService>().Dispose(); } catch { }
         try { App.Services.GetRequiredService<EngineSupervisor>().Stop(); } catch { }
+        try { App.Services.GetRequiredService<SettingsRepository>().Set("app_running", "0"); } catch { }
         try
         {
             var ports = App.Services.GetRequiredService<ProxyPortSettings>();

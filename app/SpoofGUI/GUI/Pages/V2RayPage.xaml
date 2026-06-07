@@ -5,13 +5,18 @@
     NavigationCacheMode="Required"
     Background="{StaticResource SurfaceBase}">
 
-    <Grid Padding="32,32,32,32" RowSpacing="24">
+    <Page.Resources>
+        <CollectionViewSource x:Name="ProfilesSource" IsSourceGrouped="True" />
+    </Page.Resources>
+
+    <Grid Padding="32,24,32,24" RowSpacing="14">
         <Grid.ChildrenTransitions>
             <TransitionCollection>
                 <EntranceThemeTransition FromVerticalOffset="14" IsStaggeringEnabled="True" />
             </TransitionCollection>
         </Grid.ChildrenTransitions>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -28,7 +33,11 @@
                        Foreground="{StaticResource TextSecondary}" />
         </StackPanel>
 
-        <Grid Grid.Row="1" ColumnSpacing="24">
+        <Grid Grid.Row="1" ColumnSpacing="24" RowSpacing="12">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
@@ -36,36 +45,83 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <StackPanel Grid.Column="0">
+            <StackPanel Grid.Row="0" Grid.Column="0">
                 <TextBlock Text="Status" Style="{StaticResource TextCaption}" />
                 <TextBlock x:Name="StatStatus" Style="{StaticResource TextMono}" Text="idle" />
             </StackPanel>
-            <StackPanel Grid.Column="1">
+            <StackPanel Grid.Row="0" Grid.Column="1">
                 <TextBlock Text="Uptime" Style="{StaticResource TextCaption}" />
                 <TextBlock x:Name="StatUptime" Style="{StaticResource TextMono}" Text="—" />
             </StackPanel>
-            <StackPanel Grid.Column="2">
+            <StackPanel Grid.Row="0" Grid.Column="2">
                 <TextBlock Text="Download" Style="{StaticResource TextCaption}" />
                 <TextBlock x:Name="StatDown" Style="{StaticResource TextMono}" Text="0 B/s" />
             </StackPanel>
-            <StackPanel Grid.Column="3">
+            <StackPanel Grid.Row="0" Grid.Column="3">
                 <TextBlock Text="Upload" Style="{StaticResource TextCaption}" />
                 <TextBlock x:Name="StatUp" Style="{StaticResource TextMono}" Text="0 B/s" />
             </StackPanel>
-            <StackPanel Grid.Column="4">
+            <StackPanel Grid.Row="0" Grid.Column="4">
                 <TextBlock Text="Total (down / up)" Style="{StaticResource TextCaption}" />
                 <TextBlock x:Name="StatTotal" Style="{StaticResource TextMono}" Text="0 B / 0 B" />
             </StackPanel>
+
+            <Border Grid.Row="1"
+                    Grid.Column="0"
+                    Grid.ColumnSpan="5"
+                    Height="54"
+                    Background="{StaticResource SurfaceSunken}"
+                    BorderBrush="{StaticResource BorderSubtle}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="8,5">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="16">
+                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                            <Border Width="10" Height="2" Background="{StaticResource AccentBase}" VerticalAlignment="Center" />
+                            <TextBlock Text="down" Style="{StaticResource TextCaption}" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                            <Border Width="10" Height="2" Background="{StaticResource TextSecondary}" VerticalAlignment="Center" />
+                            <TextBlock Text="up" Style="{StaticResource TextCaption}" />
+                        </StackPanel>
+                        <TextBlock x:Name="GraphPeak" Style="{StaticResource TextCaption}" Foreground="{StaticResource TextTertiary}" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <Grid x:Name="GraphHost" Grid.Row="1" Margin="0,4,0,0">
+                        <Polyline x:Name="UpLine" Stroke="{StaticResource TextSecondary}" StrokeThickness="1.25" StrokeLineJoin="Round" />
+                        <Polyline x:Name="DownLine" Stroke="{StaticResource AccentBase}" StrokeThickness="1.5" StrokeLineJoin="Round" />
+                    </Grid>
+                </Grid>
+            </Border>
         </Grid>
 
-        <StackPanel Grid.Row="2" Spacing="12">
-            <TextBlock Text="Import" Style="{StaticResource TextH2}" />
+        <StackPanel Grid.Row="2" Spacing="8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="Import" Style="{StaticResource TextH2}" VerticalAlignment="Center" />
+                <Button Grid.Column="1"
+                        x:Name="SubscriptionsButton"
+                        Style="{StaticResource SecondaryButton}"
+                        Click="OnManageSubscriptions">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <SymbolIcon Symbol="Sync" Foreground="{StaticResource TextPrimary}" />
+                        <TextBlock x:Name="SubscriptionsLabel" Text="subscriptions" />
+                    </StackPanel>
+                </Button>
+            </Grid>
             <TextBox x:Name="ImportText"
                      Style="{StaticResource FieldTextBox}"
                      AcceptsReturn="True"
                      TextWrapping="Wrap"
-                     MinHeight="88"
-                     MaxHeight="180"
+                     MinHeight="52"
+                     MaxHeight="104"
                      ScrollViewer.VerticalScrollBarVisibility="Auto"
                      PlaceholderText="one config per line — vless://, trojan://, vmess://, ss://, or raw config" />
             <Grid ColumnSpacing="12">
@@ -140,6 +196,12 @@
                         <TextBlock x:Name="PingLabel" Text="ping all" />
                     </StackPanel>
                 </Button>
+                <Button x:Name="FastestButton" Style="{StaticResource SecondaryButton}" Click="OnConnectFastest">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <SymbolIcon Symbol="Find" Foreground="{StaticResource TextPrimary}" />
+                        <TextBlock Text="fastest" />
+                    </StackPanel>
+                </Button>
                 <Button x:Name="CancelPingButton"
                         Style="{StaticResource DangerButton}"
                         Click="OnCancelPing"
@@ -151,7 +213,7 @@
                                       IsActive="False"
                                       Visibility="Collapsed" />
                         <SymbolIcon Symbol="Cancel" Foreground="{StaticResource StatusDanger}" />
-                        <TextBlock Text="cancel ping" />
+                        <TextBlock x:Name="CancelPingLabel" Text="cancel ping" />
                     </StackPanel>
                 </Button>
                 <Button x:Name="EditButton" Style="{StaticResource SecondaryButton}" Click="OnEdit">
@@ -169,12 +231,61 @@
             </StackPanel>
         </Grid>
 
+        <Grid Grid.Row="4" ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="180" />
+            </Grid.ColumnDefinitions>
+            <TextBox x:Name="SearchBox"
+                     Style="{StaticResource FieldTextBox}"
+                     PlaceholderText="search configs"
+                     TextChanged="OnSearchChanged" />
+            <ComboBox x:Name="SortSelector"
+                      Grid.Column="1"
+                      SelectedIndex="0"
+                      SelectionChanged="OnSortChanged">
+                <ComboBoxItem Content="newest" />
+                <ComboBoxItem Content="name" />
+                <ComboBoxItem Content="protocol" />
+                <ComboBoxItem Content="ping" />
+            </ComboBox>
+        </Grid>
+
         <ListView x:Name="ProfileList"
-                  Grid.Row="4"
-                  SelectionMode="Extended"
+                  Grid.Row="5"
+                  SelectionMode="Multiple"
+                  ItemsSource="{Binding Source={StaticResource ProfilesSource}}"
                   SelectionChanged="OnProfileSelected"
                   ScrollViewer.VerticalScrollBarVisibility="Auto"
                   ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+            <ListView.GroupStyle>
+                <GroupStyle HidesIfEmpty="True">
+                    <GroupStyle.HeaderTemplate>
+                        <DataTemplate>
+                            <Border Padding="0,12,0,4">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="{Binding Key}"
+                                               Style="{StaticResource TextCaption}"
+                                               Foreground="{StaticResource AccentBase}"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding Count}"
+                                               Style="{StaticResource TextCaption}"
+                                               Foreground="{StaticResource TextTertiary}" />
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </GroupStyle.HeaderTemplate>
+                </GroupStyle>
+            </ListView.GroupStyle>
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="Padding" Value="10,2" />
+                    <Setter Property="Margin" Value="0" />
+                    <Setter Property="MinHeight" Value="0" />
+                    <Setter Property="CornerRadius" Value="6" />
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                </Style>
+            </ListView.ItemContainerStyle>
             <ListView.ItemContainerTransitions>
                 <TransitionCollection>
                     <AddDeleteThemeTransition />
@@ -184,12 +295,22 @@
             </ListView.ItemContainerTransitions>
             <ListView.ItemTemplate>
                 <DataTemplate>
-                    <Grid Padding="0,8" ColumnSpacing="16">
+                    <Grid Padding="0,4" ColumnSpacing="16">
                         <Grid.ContextFlyout>
                             <MenuFlyout>
+                                <MenuFlyoutItem Text="Select" Click="OnSelectConfig">
+                                    <MenuFlyoutItem.Icon>
+                                        <SymbolIcon Symbol="Accept" />
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
                                 <MenuFlyoutItem Text="Ping" Click="OnPingOne">
                                     <MenuFlyoutItem.Icon>
                                         <SymbolIcon Symbol="Clock" />
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                                <MenuFlyoutItem Text="Set group" Click="OnSetGroup">
+                                    <MenuFlyoutItem.Icon>
+                                        <SymbolIcon Symbol="Folder" />
                                     </MenuFlyoutItem.Icon>
                                 </MenuFlyoutItem>
                                 <MenuFlyoutItem Text="Export config" Click="OnExportConfig">
@@ -203,11 +324,12 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0" Spacing="2">
-                            <TextBlock Text="{Binding Name}" Style="{StaticResource TextBody}" />
-                            <TextBlock Text="{Binding Address}" Style="{StaticResource TextMono}" Foreground="{StaticResource TextSecondary}" />
+                        <StackPanel Grid.Column="0" Spacing="1">
+                            <TextBlock Text="{Binding Name}" Style="{StaticResource TextBody}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding Address}" Style="{StaticResource TextMono}" FontSize="12" Foreground="{StaticResource TextSecondary}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding LatencySummary}" Style="{StaticResource TextMono}" FontSize="10" Foreground="{StaticResource TextTertiary}" TextTrimming="CharacterEllipsis" />
                         </StackPanel>
-                        <StackPanel Grid.Column="1" HorizontalAlignment="Right" Spacing="2">
+                        <StackPanel Grid.Column="1" HorizontalAlignment="Right" Spacing="1">
                             <TextBlock Text="{Binding Protocol}" Style="{StaticResource TextCaption}" HorizontalAlignment="Right" />
                             <TextBlock Text="{Binding Ping}" Style="{StaticResource TextMono}" FontSize="12" Foreground="{StaticResource AccentBase}" HorizontalAlignment="Right" />
                         </StackPanel>

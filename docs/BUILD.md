@@ -1,6 +1,6 @@
 # Building SpoofGUI
 
-This document describes the 1.0.4 release pipeline.
+This document describes the 1.0.5 release pipeline.
 
 ## What Gets Built
 

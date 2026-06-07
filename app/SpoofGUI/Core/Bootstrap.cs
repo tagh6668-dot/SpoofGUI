@@ -20,6 +20,8 @@ internal static class Bootstrap
         services.AddSingleton<AppSettings>();
         services.AddSingleton<ProfileRepository>();
         services.AddSingleton<V2RayProfileRepository>();
+        services.AddSingleton<RoutingRuleRepository>();
+        services.AddSingleton<SubscriptionRepository>();
         services.AddSingleton<DatabaseInitializer>();
 
         services.AddSingleton<EngineSupervisor>();
@@ -29,6 +31,9 @@ internal static class Bootstrap
         services.AddSingleton<SniScannerService>();
         services.AddSingleton<SniListService>();
         services.AddSingleton<ProfileBackupService>();
+        services.AddSingleton<DiagnosticsService>();
+        services.AddSingleton<SubscriptionService>();
+        services.AddSingleton<ConnectionTestService>();
         services.AddSingleton<ConnectionGuard>();
 
         services.AddSingleton<MainPageViewModel>();
@@ -36,11 +41,13 @@ internal static class Bootstrap
         services.AddTransient<ConfigPageViewModel>();
         services.AddTransient<V2RayPageViewModel>();
         services.AddTransient<SniScannerPageViewModel>();
+        services.AddTransient<RoutingPageViewModel>();
         services.AddTransient<ShellViewModel>();
 
         var sp = services.BuildServiceProvider();
         sp.GetRequiredService<DatabaseInitializer>().EnsureCreated();
         sp.GetRequiredService<ConnectionGuard>();
+        sp.GetRequiredService<SubscriptionService>().StartAutoTimer();
         return sp;
     }
 }

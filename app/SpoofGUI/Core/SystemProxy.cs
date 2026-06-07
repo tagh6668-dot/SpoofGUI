@@ -74,11 +74,22 @@ internal static class SystemProxy
         return key?.GetValue("ProxyServer") as string;
     }
 
-        public static bool IsOurs(string ourEndpoint)
+    public static bool IsOurs(string ourEndpoint)
     {
         if (!IsEnabled()) return false;
         var current = GetProxyServer();
         return string.Equals(current, ourEndpoint, StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static bool LooksLikeSpoofGuiProxy(ProxyPortSettings ports)
+    {
+        if (!IsEnabled()) return false;
+        var current = GetProxyServer() ?? "";
+        return current.Contains("127.0.0.1", StringComparison.OrdinalIgnoreCase)
+            && (current.Contains($":{ports.HttpPort}", StringComparison.OrdinalIgnoreCase)
+                || current.Contains($":{ports.SocksPort}", StringComparison.OrdinalIgnoreCase)
+                || current.Contains($":{ProxyPortSettings.DefaultHttpPort}", StringComparison.OrdinalIgnoreCase)
+                || current.Contains($":{ProxyPortSettings.DefaultSocksPort}", StringComparison.OrdinalIgnoreCase));
     }
 
     private static void WriteRegistry(bool enable, string? proxyServer)

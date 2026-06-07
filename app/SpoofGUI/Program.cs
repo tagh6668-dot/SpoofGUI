@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
+using Microsoft.Extensions.DependencyInjection;
 using SpoofGUI.Core;
 
 namespace SpoofGUI;
@@ -9,10 +10,20 @@ public static class Program
 {
     [DllImport("Microsoft.ui.xaml.dll")]
     private static extern void XamlCheckProcessRequirements();
+    [DllImport("kernel32.dll")] private static extern bool AttachConsole(uint dwProcessId);
+    private const uint AttachParentProcess = 0xFFFFFFFF;
 
     [STAThread]
     private static void Main(string[] args)
     {
+        if (args.Any(a => a.Equals("--health-check", StringComparison.OrdinalIgnoreCase)))
+        {
+            AttachConsole(AttachParentProcess);
+            var services = Bootstrap.BuildServiceProvider();
+            Console.WriteLine(services.GetRequiredService<DiagnosticsService>().BuildHealthText());
+            return;
+        }
+
         if (!IsRunningAsAdministrator())
         {
             RelaunchAsAdministrator(args);

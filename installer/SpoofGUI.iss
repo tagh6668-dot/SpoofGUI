@@ -33,7 +33,9 @@ DisableProgramGroupPage=yes
 LicenseFile={#RepoRoot}\LICENSE
 
 [Files]
-Source: "{#StageDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+; WinDivert is dual-use software and some AVs flag installer temp extraction.
+; Ship the app without it; SpoofGUI prompts and downloads official WinDivert on first SNI use.
+Source: "{#StageDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "app\engine\WinDivert.dll,app\engine\WinDivert32.sys,app\engine\WinDivert64.sys"
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}"

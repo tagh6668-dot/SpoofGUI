@@ -6,8 +6,7 @@
     <Border x:Name="RootCard"
             RequestedTheme="Dark"
             Background="{StaticResource SurfaceSunken}"
-            BorderBrush="{StaticResource BorderSubtle}"
-            BorderThickness="1">
+            BorderThickness="0">
         <Border.Resources>
             <Style x:Key="TrayLinkButton" TargetType="Button">
                 <Setter Property="Background" Value="Transparent" />
@@ -81,6 +80,12 @@
                                FontSize="12"
                                Foreground="{StaticResource TextSecondary}"
                                TextTrimming="CharacterEllipsis" />
+                    <TextBlock x:Name="TrayModeLine"
+                               Text="V2Ray: Proxy"
+                               Style="{StaticResource TextMono}"
+                               FontSize="11"
+                               Foreground="{StaticResource TextTertiary}"
+                               TextTrimming="CharacterEllipsis" />
                 </StackPanel>
 
                 <Border Background="{StaticResource SurfaceBase}"
@@ -152,7 +157,7 @@
                                CharacterSpacing="120"
                                Foreground="{StaticResource TextTertiary}" />
                     <ListView x:Name="TrayProfiles"
-                              MaxHeight="150"
+                              Height="126"
                               SelectionMode="None"
                               IsItemClickEnabled="True"
                               ItemClick="OnTrayProfileClick"

@@ -1,7 +1,7 @@
 param(
     [ValidateSet("amd64", "x86")]
     [string[]]$Arch = @("x86", "amd64"),
-    [string]$Version = "1.0.4",
+    [string]$Version = "1.0.5",
     [string]$SingBoxVersion = "1.13.12",
     [string]$WintunVersion = "0.14.1",
     [string]$WinDivertTag = "2.2.2",
@@ -45,10 +45,29 @@ function Import-VcEnv {
     }
 }
 
+function Invoke-DownloadWithRetry {
+    param([string]$Url, [string]$OutFile, [int]$Retries = 4)
+    [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+    for ($attempt = 1; $attempt -le $Retries; $attempt++) {
+        try {
+            Invoke-WebRequest -Uri $Url -OutFile $OutFile -UseBasicParsing -TimeoutSec 120
+            if ((Get-Item $OutFile).Length -gt 0) { return }
+            throw "downloaded file is empty"
+        }
+        catch {
+            if (Test-Path $OutFile) { Remove-Item -Force $OutFile }
+            if ($attempt -eq $Retries) { throw "download failed after $Retries attempts: $Url`n$($_.Exception.Message)" }
+            $delay = [Math]::Pow(2, $attempt)
+            Write-Host "  download attempt $attempt failed ($($_.Exception.Message)); retrying in $delay s..."
+            Start-Sleep -Seconds $delay
+        }
+    }
+}
+
 function Expand-DownloadedZip {
     param([string]$Url, [string]$ExtractTo)
     $zipPath = Join-Path $env:TEMP ([System.IO.Path]::GetRandomFileName() + ".zip")
-    Invoke-WebRequest -Uri $Url -OutFile $zipPath -UseBasicParsing
+    Invoke-DownloadWithRetry -Url $Url -OutFile $zipPath
     if (Test-Path $ExtractTo) { Remove-Item -Recurse -Force $ExtractTo }
     Expand-Archive -Path $zipPath -DestinationPath $ExtractTo -Force
     Remove-Item -Force $zipPath
@@ -96,9 +115,8 @@ function Get-WinDivert {
     $dir = Join-Path (Join-Path $tmp "WinDivert-$WinDivertPkg") $sub
     if (-not (Test-Path (Join-Path $dir "WinDivert.dll"))) { throw "WinDivert.dll for $ArchName not found in archive." }
     Copy-Item -Force (Join-Path $dir "WinDivert.dll") (Join-Path $engineDir "WinDivert.dll")
-    Copy-Item -Force (Join-Path $dir "WinDivert64.sys") (Join-Path $engineDir "WinDivert64.sys")
-    $sys32 = Join-Path $dir "WinDivert32.sys"
-    if (Test-Path $sys32) { Copy-Item -Force $sys32 (Join-Path $engineDir "WinDivert32.sys") }
+    $sysName = if ($ArchName -eq "x86") { "WinDivert32.sys" } else { "WinDivert64.sys" }
+    Copy-Item -Force (Join-Path $dir $sysName) (Join-Path $engineDir $sysName)
     Remove-Item -Recurse -Force $tmp
 }
 
@@ -147,7 +165,8 @@ foreach ($a in $Arch) {
     }
 
     Assert-Exists (Join-Path $engineDir "WinDivert.dll") "WinDivert.dll"
-    Assert-Exists (Join-Path $engineDir "WinDivert64.sys") "WinDivert64.sys"
+    $winDivertSys = if ($a -eq "x86") { "WinDivert32.sys" } else { "WinDivert64.sys" }
+    Assert-Exists (Join-Path $engineDir $winDivertSys) $winDivertSys
     Assert-Exists (Join-Path $xrayDir "xray.exe") "xray.exe"
     Assert-Exists (Join-Path $engineDir "sing-box.exe") "sing-box.exe"
     Assert-Exists (Join-Path $engineDir "wintun.dll") "wintun.dll"
@@ -160,7 +179,7 @@ foreach ($a in $Arch) {
     Assert-Exists (Join-Path $publishDir "SpoofGUI.exe") "published SpoofGUI.exe"
     Assert-Exists (Join-Path $publishDir "Xray\xray.exe") "published Xray\xray.exe"
     Assert-Exists (Join-Path $publishDir "engine\WinDivert.dll") "published WinDivert.dll"
-    Assert-Exists (Join-Path $publishDir "engine\WinDivert64.sys") "published WinDivert64.sys"
+    Assert-Exists (Join-Path $publishDir "engine\$winDivertSys") "published $winDivertSys"
     Assert-Exists (Join-Path $publishDir "engine\sing-box.exe") "published sing-box.exe"
     Assert-Exists (Join-Path $publishDir "engine\wintun.dll") "published wintun.dll"
 
@@ -168,6 +187,9 @@ foreach ($a in $Arch) {
     $appSub = Join-Path $stageArch "app"
     New-Item -ItemType Directory -Force -Path $appSub | Out-Null
     Copy-Item -Path (Join-Path $publishDir "*") -Destination $appSub -Recurse -Force
+    Remove-Item -Force (Join-Path $appSub "engine\WinDivert.dll") -ErrorAction SilentlyContinue
+    Remove-Item -Force (Join-Path $appSub "engine\WinDivert32.sys") -ErrorAction SilentlyContinue
+    Remove-Item -Force (Join-Path $appSub "engine\WinDivert64.sys") -ErrorAction SilentlyContinue
     Build-Launcher -ArchName $a -OutExe (Join-Path $stageArch "SpoofGUI.exe")
     Assert-Exists (Join-Path $stageArch "SpoofGUI.exe") "launcher SpoofGUI.exe"
 

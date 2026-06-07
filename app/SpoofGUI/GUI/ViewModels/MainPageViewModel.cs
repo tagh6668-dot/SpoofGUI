@@ -16,6 +16,10 @@ public sealed class MainPageViewModel
     private readonly ProfileRepository _profiles;
     private readonly EngineClient _engine;
     private readonly ConnectionGuard _guard;
+    private readonly XrayCoreService _xray;
+    private readonly SingBoxTunnelService _tunnel;
+    private readonly ProxyPortSettings _ports;
+    private readonly AppSettings _appSettings;
     private readonly ILogger<MainPageViewModel> _log;
 
     private MainPage? _page;
@@ -23,11 +27,15 @@ public sealed class MainPageViewModel
     private string _iface = "—";
     private Action<string, JsonElement>? _handler;
 
-    public MainPageViewModel(ProfileRepository profiles, EngineClient engine, ConnectionGuard guard, ILogger<MainPageViewModel> log)
+    public MainPageViewModel(ProfileRepository profiles, EngineClient engine, ConnectionGuard guard, XrayCoreService xray, SingBoxTunnelService tunnel, ProxyPortSettings ports, AppSettings appSettings, ILogger<MainPageViewModel> log)
     {
         _profiles = profiles;
         _engine = engine;
         _guard = guard;
+        _xray = xray;
+        _tunnel = tunnel;
+        _ports = ports;
+        _appSettings = appSettings;
         _log = log;
     }
 
@@ -62,10 +70,12 @@ public sealed class MainPageViewModel
                 _iface = "active";
             _engine.EnsureStatsTicker();
             page.RenderLive(_iface, status.UptimeMs, status.Connections);
+            page.RenderV2RayCard(_xray.IsRunning || _tunnel.IsRunning, _appSettings.V2RayMode, _ports.SocksPort, _ports.HttpPort, "");
             return;
         }
 
         page.RenderIdle(p.Name, flow, p.FakeSni);
+        page.RenderV2RayCard(_xray.IsRunning || _tunnel.IsRunning, _appSettings.V2RayMode, _ports.SocksPort, _ports.HttpPort, "");
     }
 
     public async Task ConnectAsync()
@@ -87,6 +97,7 @@ public sealed class MainPageViewModel
             _log.LogError(e, "connect failed");
             AppLog.Error($"start failed: {e.Message}");
             _page.RenderError(e.Message);
+            _page.RenderV2RayCard(_xray.IsRunning || _tunnel.IsRunning, _appSettings.V2RayMode, _ports.SocksPort, _ports.HttpPort, e.Message);
         }
     }
 

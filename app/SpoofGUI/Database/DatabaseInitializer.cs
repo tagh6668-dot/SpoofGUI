@@ -13,11 +13,33 @@ public sealed class DatabaseInitializer
         using var tx = conn.BeginTransaction();
         Exec(conn, tx, Schema.Profiles);
         Exec(conn, tx, Schema.V2RayProfiles);
+        Exec(conn, tx, Schema.V2RayPingHistory);
+        Exec(conn, tx, Schema.RoutingRules);
+        Exec(conn, tx, Schema.Subscriptions);
         Exec(conn, tx, Schema.Settings);
         Exec(conn, tx, Schema.SeedSettings);
         Exec(conn, tx, Schema.MigrateUpdateRepoUrl);
         Exec(conn, tx, Schema.SeedDefaultProfile);
+        AddColumnIfMissing(conn, tx, "v2ray_profiles", "subscription_id", "INTEGER NOT NULL DEFAULT 0");
+        AddColumnIfMissing(conn, tx, "v2ray_profiles", "group_name", "TEXT NOT NULL DEFAULT ''");
         tx.Commit();
+    }
+
+    private static void AddColumnIfMissing(SqliteConnection conn, SqliteTransaction tx, string table, string column, string definition)
+    {
+        bool exists;
+        using (var check = conn.CreateCommand())
+        {
+            check.Transaction = tx;
+            check.CommandText = $"SELECT COUNT(*) FROM pragma_table_info('{table}') WHERE name = $name;";
+            check.Parameters.AddWithValue("$name", column);
+            exists = Convert.ToInt64(check.ExecuteScalar()) > 0;
+        }
+        if (exists) return;
+        using var alter = conn.CreateCommand();
+        alter.Transaction = tx;
+        alter.CommandText = $"ALTER TABLE {table} ADD COLUMN {column} {definition};";
+        alter.ExecuteNonQuery();
     }
 
     private static void Exec(SqliteConnection conn, SqliteTransaction tx, string sql)
@@ -60,6 +82,36 @@ CREATE TABLE IF NOT EXISTS v2ray_profiles (
     raw_uri     TEXT    NOT NULL DEFAULT '',
     created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
     updated_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+);";
+
+    public const string V2RayPingHistory = @"
+CREATE TABLE IF NOT EXISTS v2ray_ping_history (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    profile_id  INTEGER NOT NULL,
+    latency_ms  INTEGER NOT NULL,
+    created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+);";
+
+    public const string RoutingRules = @"
+CREATE TABLE IF NOT EXISTS routing_rules (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    kind       TEXT    NOT NULL DEFAULT 'domain',
+    pattern    TEXT    NOT NULL,
+    outbound   TEXT    NOT NULL DEFAULT 'proxy',
+    enabled    INTEGER NOT NULL DEFAULT 1,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+);";
+
+    public const string Subscriptions = @"
+CREATE TABLE IF NOT EXISTS subscriptions (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    name         TEXT    NOT NULL,
+    url          TEXT    NOT NULL,
+    auto_update  INTEGER NOT NULL DEFAULT 1,
+    last_updated TEXT    NOT NULL DEFAULT '',
+    last_count   INTEGER NOT NULL DEFAULT 0,
+    created_at   TEXT    NOT NULL DEFAULT (datetime('now'))
 );";
 
     public const string Settings = @"

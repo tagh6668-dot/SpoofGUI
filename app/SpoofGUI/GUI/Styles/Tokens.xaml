@@ -26,4 +26,15 @@
 
     <CornerRadius x:Key="RadiusSm">3</CornerRadius>
     <CornerRadius x:Key="RadiusMd">6</CornerRadius>
+
+    <SolidColorBrush x:Key="ToggleSwitchFillOn"            Color="#F4B656" />
+    <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="#F7C36F" />
+    <SolidColorBrush x:Key="ToggleSwitchFillOnPressed"     Color="#D89A3E" />
+    <SolidColorBrush x:Key="ToggleSwitchFillOnDisabled"    Color="#7A5A2C" />
+    <SolidColorBrush x:Key="ToggleSwitchStrokeOn"            Color="#F4B656" />
+    <SolidColorBrush x:Key="ToggleSwitchStrokeOnPointerOver" Color="#F7C36F" />
+    <SolidColorBrush x:Key="ToggleSwitchStrokeOnPressed"     Color="#D89A3E" />
+    <SolidColorBrush x:Key="ToggleSwitchKnobFillOn"            Color="#15181E" />
+    <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="#15181E" />
+    <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed"     Color="#15181E" />
 </ResourceDictionary>

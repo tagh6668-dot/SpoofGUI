@@ -40,6 +40,8 @@ public sealed partial class SettingsPage : Page
         BootstrapDnsBox.Text = _vm.BootstrapDns;
         DnsStrategyCombo.SelectedIndex = DnsStrategyToIndex(_vm.DnsStrategy);
         DataFolderText.Text = _vm.DataFolder;
+        WinDivertStatusText.Text = _vm.WinDivertStatus();
+        PortableStatusText.Text = _vm.PortableReadiness();
         _initializing = false;
     }
 
@@ -195,6 +197,71 @@ public sealed partial class SettingsPage : Page
     {
         if (_initializing) return;
         _vm.KillSwitch = KillSwitchToggle.IsOn;
+    }
+
+    private void OnRefreshDiagnostics(object sender, object e)
+    {
+        WinDivertStatusText.Text = _vm.WinDivertStatus();
+        PortableStatusText.Text = _vm.PortableReadiness();
+        DiagnosticsStatus.Text = "refreshed";
+    }
+
+    private void OnRunHealthCheck(object sender, object e)
+    {
+        HealthCheckOutput.Text = _vm.BuildHealthText();
+        HealthCheckOutput.Visibility = Visibility.Visible;
+        DiagnosticsStatus.Text = "health check complete";
+    }
+
+    private async void OnRunConnectionTest(object sender, object e)
+    {
+        SetConnTestBusy(true);
+        try
+        {
+            var result = await _vm.RunConnectionTestAsync();
+            ConnTestStatus.Text = result.Status;
+            ConnProxied.Text = result.ProxiedEgress;
+            ConnDirect.Text = result.DirectEgress;
+            ConnDns.Text = string.IsNullOrEmpty(result.DnsServers) ? "unknown" : result.DnsServers;
+            ConnDnsNote.Text = result.DnsNote;
+            ConnTestResults.Visibility = Visibility.Visible;
+        }
+        catch (Exception ex)
+        {
+            ConnTestStatus.Text = $"test failed: {ex.Message}";
+            ConnTestResults.Visibility = Visibility.Visible;
+        }
+        finally
+        {
+            SetConnTestBusy(false);
+        }
+    }
+
+    private void SetConnTestBusy(bool on)
+    {
+        ConnTestButton.IsEnabled = !on;
+        ConnTestContent.Visibility = on ? Visibility.Collapsed : Visibility.Visible;
+        ConnTestSpinner.IsActive = on;
+        ConnTestSpinner.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private async void OnExportDiagnostics(object sender, object e)
+    {
+        try
+        {
+            var picker = new FileSavePicker();
+            InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.CurrentWindow));
+            picker.SuggestedFileName = $"spoofgui-diagnostics-{DateTime.Now:yyyyMMdd-HHmm}";
+            picker.FileTypeChoices.Add("Text report", new List<string> { ".txt" });
+            var file = await picker.PickSaveFileAsync();
+            if (file is null) { DiagnosticsStatus.Text = "export cancelled"; return; }
+            await FileIO.WriteTextAsync(file, _vm.BuildDiagnosticsReport());
+            DiagnosticsStatus.Text = $"exported to {file.Name}";
+        }
+        catch (Exception ex)
+        {
+            DiagnosticsStatus.Text = $"export failed: {ex.Message}";
+        }
     }
 
     private async void OnInstallUpdate(object sender, object e)

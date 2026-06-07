@@ -56,6 +56,15 @@
                     </StackPanel>
                 </Button>
             </Grid>
+            <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="V2Ray" Style="{StaticResource TextCaption}" />
+                    <TextBlock x:Name="V2RayCardStatus" Text="idle" Style="{StaticResource TextH2}" />
+                    <TextBlock x:Name="V2RayCardMode" Text="mode: Proxy" Style="{StaticResource TextMono}" FontSize="12" Foreground="{StaticResource TextSecondary}" />
+                    <TextBlock x:Name="V2RayCardPorts" Text="socks — · http —" Style="{StaticResource TextMono}" FontSize="12" Foreground="{StaticResource TextSecondary}" />
+                    <TextBlock x:Name="V2RayCardError" Text="" Style="{StaticResource TextCaption}" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
         </StackPanel>
 
         <StackPanel Grid.Row="2"

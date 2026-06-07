@@ -20,15 +20,22 @@ public sealed class SettingsPageViewModel
     private readonly SettingsRepository _settings;
     private readonly ProxyPortSettings _ports;
     private readonly AppSettings _app;
+    private readonly DiagnosticsService _diagnostics;
+    private readonly ConnectionTestService _connectionTest;
     private readonly ILogger<SettingsPageViewModel> _log;
 
-    public SettingsPageViewModel(SettingsRepository settings, ProxyPortSettings ports, AppSettings app, ILogger<SettingsPageViewModel> log)
+    public SettingsPageViewModel(SettingsRepository settings, ProxyPortSettings ports, AppSettings app, DiagnosticsService diagnostics, ConnectionTestService connectionTest, ILogger<SettingsPageViewModel> log)
     {
         _settings = settings;
         _ports = ports;
         _app = app;
+        _diagnostics = diagnostics;
+        _connectionTest = connectionTest;
         _log = log;
     }
+
+    public Task<ConnectionTestResult> RunConnectionTestAsync(CancellationToken ct = default) =>
+        _connectionTest.RunAsync(ct);
 
     public int SocksPort => _ports.SocksPort;
     public int HttpPort => _ports.HttpPort;
@@ -82,6 +89,10 @@ public sealed class SettingsPageViewModel
     }
 
     public string DataFolder => Paths.AppDataDir;
+    public string WinDivertStatus() => _diagnostics.WinDivertStatus();
+    public string BuildDiagnosticsReport() => _diagnostics.BuildReport();
+    public string BuildHealthText() => _diagnostics.BuildHealthText();
+    public string PortableReadiness() => _diagnostics.PortableReadiness();
 
     public void OpenDataFolder()
     {
@@ -208,7 +219,9 @@ public sealed class SettingsPageViewModel
             }
             if (url is null) return $"installer {assetName} not found in latest release";
 
-            var target = Path.Combine(Path.GetTempPath(), assetName);
+            var downloadDir = Path.Combine(Paths.AppDataDir, "downloads", "updates");
+            Directory.CreateDirectory(downloadDir);
+            var target = Path.Combine(downloadDir, assetName);
             var bytes = await http.GetByteArrayAsync(url);
             await File.WriteAllBytesAsync(target, bytes);
 

@@ -43,7 +43,7 @@ All releases and changelogs: [github.com/ZethRise/SpoofGUI/releases](https://git
 
 ## Current Status
 
-- App version: `1.0.4`
+- App version: `1.0.5`
 - Frontend: C# / .NET 10 / WinUI 3
 - Backends:
   - **Pure-C# SNI-Spoofing engine** (in-process, `app/SpoofGUI/Engine/`) — no Python. Native WinDivert P/Invoke + fake ClientHello injection ported from [patterniha/SNI-Spoofing](https://github.com/patterniha/SNI-Spoofing). Resilient bidirectional relay (a dropped connection never kills the engine) + optional Fast mode (low-latency sockets), adapted from [atarevals/SNI-Spoofing](https://github.com/atarevals/SNI-Spoofing)

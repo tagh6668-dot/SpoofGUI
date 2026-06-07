@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging;
 using SpoofGUI.Core;
+using SpoofGUI.Database;
 using SpoofGUI.Models;
 
 namespace SpoofGUI.Engine;
@@ -16,14 +17,21 @@ public sealed class SingBoxTunnelService : IDisposable
 
     private readonly ILogger<SingBoxTunnelService> _log;
     private readonly AppSettings _appSettings;
+    private readonly RoutingRuleRepository _rules;
+    private readonly V2RayProfileRepository _v2rayProfiles;
+    private readonly ProfileRepository _sniProfiles;
     private Process? _proc;
+    private V2RayProfile? _active;
 
     public bool IsRunning => _proc is { HasExited: false };
 
-    public SingBoxTunnelService(ILogger<SingBoxTunnelService> log, AppSettings appSettings)
+    public SingBoxTunnelService(ILogger<SingBoxTunnelService> log, AppSettings appSettings, RoutingRuleRepository rules, V2RayProfileRepository v2rayProfiles, ProfileRepository sniProfiles)
     {
         _log = log;
         _appSettings = appSettings;
+        _rules = rules;
+        _v2rayProfiles = v2rayProfiles;
+        _sniProfiles = sniProfiles;
     }
 
     public void Start(V2RayProfile profile)
@@ -32,6 +40,7 @@ public sealed class SingBoxTunnelService : IDisposable
         if (!File.Exists(Paths.SingBoxExePath))
             throw new FileNotFoundException($"sing-box not found: {Paths.SingBoxExePath}");
 
+        _active = profile;
         KillOrphaned();
 
         var config = BuildConfig(profile).ToJsonString(new JsonSerializerOptions { WriteIndented = true });
@@ -88,6 +97,16 @@ public sealed class SingBoxTunnelService : IDisposable
     }
 
     public void Dispose() => Stop();
+
+    public bool Reload()
+    {
+        if (_active is null || !IsRunning) return false;
+        var profile = _active;
+        Stop();
+        Start(profile);
+        AppLog.Info("sing-box reloaded (routing changed)");
+        return true;
+    }
 
     private static void TryGracefulStop(int pid)
     {
@@ -163,34 +182,130 @@ public sealed class SingBoxTunnelService : IDisposable
                     ["stack"] = "gvisor",
                 },
             },
-            ["outbounds"] = new JsonArray
-            {
-                BuildOutbound(profile),
-                new JsonObject { ["type"] = "direct", ["tag"] = "direct" },
-            },
+            ["outbounds"] = BuildOutbounds(profile),
             ["route"] = new JsonObject
             {
 
-                ["rules"] = new JsonArray
-                {
-                    new JsonObject { ["action"] = "sniff" },
-                    new JsonObject { ["protocol"] = "dns", ["action"] = "hijack-dns" },
-                    new JsonObject
-                    {
-                        ["ip_cidr"] = new JsonArray
-                        {
-                            "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16",
-                            "169.254.0.0/16", "100.64.0.0/10", "224.0.0.0/4",
-                        },
-                        ["outbound"] = "direct",
-                    },
-                },
+                ["rules"] = BuildRouteRules(profile),
                 ["auto_detect_interface"] = true,
 
                 ["default_domain_resolver"] = new JsonObject { ["server"] = "bootstrap" },
                 ["final"] = "proxy",
             },
         };
+    }
+
+    private JsonArray BuildOutbounds(V2RayProfile profile)
+    {
+        var hops = ResolveChain(profile);
+        var arr = new JsonArray();
+        for (var i = 0; i < hops.Count; i++)
+        {
+            var tag = i == 0 ? "proxy" : $"hop{i}";
+            var ob = BuildOutbound(hops[i], tag);
+            if (i < hops.Count - 1) ob["detour"] = $"hop{i + 1}";
+            arr.Add(ob);
+        }
+        arr.Add(new JsonObject { ["type"] = "direct", ["tag"] = "direct" });
+        return arr;
+    }
+
+    private List<string> BypassIps(V2RayProfile profile)
+    {
+        var ips = new List<string>();
+        void Add(string? value)
+        {
+            value = (value ?? "").Trim();
+            if (System.Net.IPAddress.TryParse(value, out var addr)
+                && addr.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork
+                && !System.Net.IPAddress.IsLoopback(addr)
+                && !ips.Contains(value))
+            {
+                ips.Add(value);
+            }
+        }
+
+        Add(_sniProfiles.GetActive()?.ConnectIp);
+        Add(profile.Address);
+        Add(NormalizeServerAddress(profile.Address));
+        foreach (var hop in ResolveChain(profile)) Add(NormalizeServerAddress(hop.Address));
+        return ips;
+    }
+
+    private List<V2RayProfile> ResolveChain(V2RayProfile fallback)
+    {
+        var ids = _appSettings.ProxyChain;
+        if (ids.Count == 0) return [fallback];
+        var all = _v2rayProfiles.All().ToDictionary(p => p.Id);
+        var hops = new List<V2RayProfile>();
+        foreach (var id in ids)
+            if (all.TryGetValue(id, out var p)) hops.Add(p);
+        if (hops.Count == 0) return [fallback];
+        AppLog.Info($"sing-box proxy chain: {hops.Count} hop(s) — entry {hops[0].Name}");
+        return hops;
+    }
+
+    private JsonArray BuildRouteRules(V2RayProfile profile)
+    {
+        var rules = new JsonArray
+        {
+            new JsonObject { ["action"] = "sniff" },
+            new JsonObject { ["protocol"] = "dns", ["action"] = "hijack-dns" },
+            new JsonObject
+            {
+                ["ip_cidr"] = new JsonArray
+                {
+                    "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16",
+                    "169.254.0.0/16", "100.64.0.0/10", "224.0.0.0/4",
+                },
+                ["action"] = "route",
+                ["outbound"] = "direct",
+            },
+        };
+
+        var bypass = BypassIps(profile);
+        if (bypass.Count > 0)
+        {
+            var cidrs = new JsonArray();
+            foreach (var ip in bypass) cidrs.Add($"{ip}/32");
+            rules.Add(new JsonObject
+            {
+                ["ip_cidr"] = cidrs,
+                ["action"] = "route",
+                ["outbound"] = "direct",
+            });
+            AppLog.Info($"sing-box: bypass tunnel (direct) for {string.Join(", ", bypass)}");
+        }
+
+        foreach (var rule in _rules.Enabled())
+        {
+            var pattern = (rule.Pattern ?? "").Trim();
+            if (pattern.Length == 0) continue;
+            var node = new JsonObject();
+            switch (rule.Kind)
+            {
+                case "process":
+                    node["process_name"] = new JsonArray { pattern };
+                    break;
+                case "ip":
+                    node["ip_cidr"] = new JsonArray { pattern };
+                    break;
+                default:
+                    node["domain_suffix"] = new JsonArray { pattern.TrimStart('.') };
+                    break;
+            }
+            if (rule.Outbound == "block")
+            {
+                node["action"] = "reject";
+            }
+            else
+            {
+                node["action"] = "route";
+                node["outbound"] = rule.Outbound == "direct" ? "direct" : "proxy";
+            }
+            rules.Add(node);
+        }
+        return rules;
     }
 
     private static JsonObject DnsServer(string tag, string value, string? detour)
@@ -226,15 +341,16 @@ public sealed class SingBoxTunnelService : IDisposable
         return node;
     }
 
-    private JsonObject BuildOutbound(V2RayProfile profile)
+    private JsonObject BuildOutbound(V2RayProfile profile, string tag)
     {
         var proto = profile.Protocol.ToLowerInvariant();
         var query = ParseQuery(profile.RawUri);
+        var serverAddress = NormalizeServerAddress(profile.Address);
         var outbound = new JsonObject
         {
             ["type"] = proto,
-            ["tag"] = "proxy",
-            ["server"] = profile.Address,
+            ["tag"] = tag,
+            ["server"] = serverAddress,
             ["server_port"] = profile.Port,
         };
 
@@ -265,15 +381,15 @@ public sealed class SingBoxTunnelService : IDisposable
                     $"Tunnel mode (sing-box) does not support protocol '{profile.Protocol}'. Use Proxy or System Proxy mode.");
         }
 
-        AddTransportAndTls(outbound, profile, query);
+        AddTransportAndTls(outbound, profile, query, serverAddress);
         return outbound;
     }
 
-    private static void AddTransportAndTls(JsonObject outbound, V2RayProfile profile, Dictionary<string, string> query)
+    private static void AddTransportAndTls(JsonObject outbound, V2RayProfile profile, Dictionary<string, string> query, string serverAddress)
     {
         var network = string.IsNullOrWhiteSpace(profile.Transport) ? "tcp" : profile.Transport.ToLowerInvariant();
         var security = profile.Security.ToLowerInvariant();
-        var serverName = string.IsNullOrWhiteSpace(profile.ServerName) ? profile.Address : profile.ServerName;
+        var serverName = string.IsNullOrWhiteSpace(profile.ServerName) ? serverAddress : profile.ServerName;
 
         if (security is "tls" or "reality")
         {
@@ -336,5 +452,64 @@ public sealed class SingBoxTunnelService : IDisposable
             if (!string.IsNullOrWhiteSpace(key)) map[key] = val;
         }
         return map;
+    }
+
+    private string NormalizeServerAddress(string address)
+    {
+        if (!IPAddress.TryParse(address, out var ip) || !IPAddress.IsLoopback(ip))
+            return address;
+
+        var spoof = _sniProfiles.GetActive();
+        var replacement = spoof is null ? null : ResolveInterfaceIPv4(spoof.ConnectIp, spoof.ConnectPort);
+        if (string.IsNullOrWhiteSpace(replacement) || IPAddress.IsLoopback(IPAddress.Parse(replacement)))
+            replacement = FirstNonLoopbackIPv4();
+
+        if (!string.IsNullOrWhiteSpace(replacement))
+        {
+            AppLog.Info($"sing-box: rewrote loopback target {address} to {replacement} because local loopback TCP is unavailable");
+            return replacement;
+        }
+
+        return address;
+    }
+
+    private static string? ResolveInterfaceIPv4(string remoteIp, int remotePort)
+    {
+        try
+        {
+            using var socket = new System.Net.Sockets.Socket(
+                System.Net.Sockets.AddressFamily.InterNetwork,
+                System.Net.Sockets.SocketType.Dgram,
+                System.Net.Sockets.ProtocolType.Udp);
+            socket.Connect(IPAddress.Parse(remoteIp), remotePort);
+            var ip = (socket.LocalEndPoint as IPEndPoint)?.Address.ToString();
+            if (string.IsNullOrWhiteSpace(ip) || NetworkHelper.IsVirtualInterface(ip))
+                return NetworkHelper.GetLocalPhysicalIPAddress();
+
+            return ip;
+        }
+        catch
+        {
+            return NetworkHelper.GetLocalPhysicalIPAddress();
+        }
+    }
+
+    private static string? FirstNonLoopbackIPv4()
+    {
+        foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
+        {
+            if (nic.OperationalStatus != OperationalStatus.Up) continue;
+            if (nic.NetworkInterfaceType == NetworkInterfaceType.Loopback) continue;
+            foreach (var addr in nic.GetIPProperties().UnicastAddresses)
+            {
+                if (addr.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork
+                    && !IPAddress.IsLoopback(addr.Address))
+                {
+                    return addr.Address.ToString();
+                }
+            }
+        }
+
+        return null;
     }
 }

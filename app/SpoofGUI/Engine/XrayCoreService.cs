@@ -146,14 +146,14 @@ public sealed class XrayCoreService : IDisposable
             proc.BeginOutputReadLine();
             proc.BeginErrorReadLine();
 
-            await WaitForLoopbackPortAsync(port, TimeSpan.FromSeconds(4), ct);
+            await WaitForLoopbackPortAsync(port, TimeSpan.FromSeconds(5), ct);
 
             using var handler = new HttpClientHandler
             {
                 Proxy = new WebProxy($"socks5://127.0.0.1:{port}"),
                 UseProxy = true,
             };
-            using var http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(5) };
+            using var http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(8) };
             const string testUrl = "http://cp.cloudflare.com/generate_204";
 
             async Task<long> MeasureAsync()
@@ -166,15 +166,21 @@ public sealed class XrayCoreService : IDisposable
                 return stopwatch.ElapsedMilliseconds;
             }
 
+            try { await MeasureAsync(); } catch { }
+
+            var best = long.MaxValue;
             Exception? last = null;
-            for (var i = 0; i < 2; i++)
+            for (var i = 0; i < 3; i++)
             {
-                try { return await MeasureAsync(); }
+                try { best = Math.Min(best, await MeasureAsync()); }
                 catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
                 catch (Exception e) { last = e; }
             }
 
-            throw last ?? new InvalidOperationException("no response through proxy");
+            if (best == long.MaxValue)
+                throw last ?? new InvalidOperationException("no response through proxy");
+
+            return best;
         }
         finally
         {
@@ -206,7 +212,7 @@ public sealed class XrayCoreService : IDisposable
             }
             catch
             {
-                await Task.Delay(50, ct);
+                await Task.Delay(150, ct);
             }
         }
 

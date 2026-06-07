@@ -50,6 +50,10 @@ public sealed class V2RayProfile : INotifyPropertyChanged
     public string Transport { get; set; } = "tcp";
     public string ServerName { get; set; } = "";
     public string RawUri { get; set; } = "";
+    public long SubscriptionId { get; set; }
+    public string GroupName { get; set; } = "";
+
+    public string GroupLabel => string.IsNullOrWhiteSpace(GroupName) ? "Ungrouped" : GroupName;
 
     private string _ping = "";
     public string Ping
@@ -60,6 +64,18 @@ public sealed class V2RayProfile : INotifyPropertyChanged
             if (_ping == value) return;
             _ping = value;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Ping)));
+        }
+    }
+
+    private string _latencySummary = "";
+    public string LatencySummary
+    {
+        get => _latencySummary;
+        set
+        {
+            if (_latencySummary == value) return;
+            _latencySummary = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(LatencySummary)));
         }
     }
 

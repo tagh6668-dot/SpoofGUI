@@ -84,6 +84,21 @@
                             <TextBlock Text="V2Ray" Style="{StaticResource TextBody}" />
                         </StackPanel>
                     </Button>
+                    <Button x:Name="NavRouting"
+                            Click="OnNavRouting"
+                            HorizontalContentAlignment="Left"
+                            HorizontalAlignment="Stretch"
+                            Padding="12,0"
+                            MinHeight="40"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            CornerRadius="3"
+                            ix:PressScale.IsEnabled="True">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <SymbolIcon Symbol="Sort" Foreground="{StaticResource TextPrimary}" />
+                            <TextBlock Text="Routing" Style="{StaticResource TextBody}" />
+                        </StackPanel>
+                    </Button>
                     <Button x:Name="NavScanner"
                             Click="OnNavScanner"
                             HorizontalContentAlignment="Left"

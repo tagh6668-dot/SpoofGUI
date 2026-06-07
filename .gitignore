@@ -81,3 +81,6 @@ app/SpoofGUI/Engine/WinDivert.dll
 app/SpoofGUI/Engine/WinDivert64.dll
 app/SpoofGUI/Engine/WinDivert32.sys
 app/SpoofGUI/Engine/WinDivert64.sys
+
+artifacts/
+logs.txt

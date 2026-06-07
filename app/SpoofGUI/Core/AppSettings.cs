@@ -14,6 +14,7 @@ public sealed class AppSettings
     private const string BootstrapDnsKey = "bootstrap_dns";
     private const string DnsStrategyKey = "dns_strategy";
     private const string KillSwitchKey = "kill_switch";
+    private const string ProxyChainKey = "proxy_chain";
 
     private static readonly string[] ValidLogLevels = ["none", "error", "warning", "info", "debug"];
     private static readonly string[] ValidModes = ["Proxy", "Tunnel", "SystemProxy"];
@@ -97,6 +98,20 @@ public sealed class AppSettings
             return value is not null && ValidDnsStrategies.Contains(value) ? value : DefaultDnsStrategy;
         }
         set => _settings.Set(DnsStrategyKey, ValidDnsStrategies.Contains(value) ? value : DefaultDnsStrategy);
+    }
+
+    public IReadOnlyList<long> ProxyChain
+    {
+        get
+        {
+            var value = _settings.Get(ProxyChainKey);
+            if (string.IsNullOrWhiteSpace(value)) return [];
+            return value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(s => long.TryParse(s, out var id) ? id : 0)
+                .Where(id => id > 0)
+                .ToList();
+        }
+        set => _settings.Set(ProxyChainKey, string.Join(',', value));
     }
 
     private string ReadString(string key, string fallback)

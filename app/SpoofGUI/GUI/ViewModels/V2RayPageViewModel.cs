@@ -1,7 +1,3 @@
-using System.Net;
-using System.Text;
-using System.Text.Json;
-using System.Text.RegularExpressions;
 using SpoofGUI.Core;
 using SpoofGUI.Database;
 using SpoofGUI.Engine;
@@ -17,8 +13,9 @@ public sealed class V2RayPageViewModel
     private readonly ProxyPortSettings _ports;
     private readonly AppSettings _appSettings;
     private readonly ConnectionGuard _guard;
+    private readonly SubscriptionService _subscriptions;
 
-    public V2RayPageViewModel(V2RayProfileRepository profiles, XrayCoreService xray, SingBoxTunnelService tunnel, ProxyPortSettings ports, AppSettings appSettings, ConnectionGuard guard)
+    public V2RayPageViewModel(V2RayProfileRepository profiles, XrayCoreService xray, SingBoxTunnelService tunnel, ProxyPortSettings ports, AppSettings appSettings, ConnectionGuard guard, SubscriptionService subscriptions)
     {
         _profiles = profiles;
         _xray = xray;
@@ -26,6 +23,7 @@ public sealed class V2RayPageViewModel
         _ports = ports;
         _appSettings = appSettings;
         _guard = guard;
+        _subscriptions = subscriptions;
     }
 
     public void ArmKillSwitch() => _guard.ArmV2Ray();
@@ -56,16 +54,29 @@ public sealed class V2RayPageViewModel
     public Task<bool> RefreshRunningAsync() => _xray.RefreshRunningAsync();
     public Task<string> CoreVersionAsync() => _xray.VersionAsync();
 
+    public IReadOnlyList<Subscription> LoadSubscriptions() => _subscriptions.All();
+    public Subscription AddSubscription(string name, string url) => _subscriptions.Add(name, url);
+    public Task<SubUpdateResult> UpdateSubscriptionAsync(Subscription sub, CancellationToken ct = default) => _subscriptions.UpdateAsync(sub, ct);
+    public Task<SubUpdateResult> UpdateAllSubscriptionsAsync(CancellationToken ct = default) => _subscriptions.UpdateAllAsync(ct);
+    public void DeleteSubscription(Subscription sub, bool removeProfiles) => _subscriptions.Delete(sub, removeProfiles);
+    public void SetSubscriptionAutoUpdate(Subscription sub, bool autoUpdate) => _subscriptions.SetAutoUpdate(sub, autoUpdate);
+
     public ImportResult ImportMany(string text, string mode)
     {
         var imported = new List<V2RayProfile>();
         var failed = 0;
+        var duplicates = 0;
         foreach (var entry in V2RayConfigParser.SplitConfigs(text))
         {
             try
             {
                 var profile = V2RayConfigParser.Parse(entry);
                 profile.Mode = mode;
+                if (_profiles.ExistsLike(profile))
+                {
+                    duplicates++;
+                    continue;
+                }
                 _profiles.Upsert(profile);
                 imported.Add(profile);
             }
@@ -75,155 +86,42 @@ public sealed class V2RayPageViewModel
             }
         }
 
-        return new ImportResult(imported, failed);
+        return new ImportResult(imported, failed, duplicates);
+    }
+
+    public ImportPreview PreviewImport(string text)
+    {
+        var items = new List<ImportPreviewItem>();
+        var invalid = 0;
+        var duplicates = 0;
+        foreach (var entry in V2RayConfigParser.SplitConfigs(text))
+        {
+            try
+            {
+                var profile = V2RayConfigParser.Parse(entry);
+                var duplicate = _profiles.ExistsLike(profile);
+                if (duplicate) duplicates++;
+                items.Add(new ImportPreviewItem(profile.Name, profile.Protocol, profile.Address, profile.Port, profile.Security, duplicate));
+            }
+            catch { invalid++; }
+        }
+        return new ImportPreview(items, invalid, duplicates);
     }
 
     public void Save(V2RayProfile profile) => _profiles.Upsert(profile);
-    public void Delete(V2RayProfile profile) => _profiles.Delete(profile.Id);
+    public void Delete(V2RayProfile profile)
+    {
+        _profiles.Delete(profile.Id);
+        _appSettings.ProxyChain = _appSettings.ProxyChain.Where(id => id != profile.Id).ToList();
+    }
     public Task StartAsync(V2RayProfile profile) => _xray.StartAsync(profile);
     public Task StopAsync() => _xray.StopAsync();
     public Task<long> TestRealDelayAsync(V2RayProfile profile, CancellationToken ct = default) => _xray.TestRealDelayAsync(profile, ct);
     public void RememberPing(long id, string ping) => _profiles.RememberPing(id, ping);
+    public void RecordPing(long id, long ms) => _profiles.RecordPing(id, ms);
+    public string LatencySummary(long id) => _profiles.LatencySummary(id);
 }
 
-public sealed record ImportResult(IReadOnlyList<V2RayProfile> Imported, int Failed);
-
-internal static class V2RayConfigParser
-{
-    private static readonly Regex ConfigScheme = new(
-        @"(?:vless|vmess|trojan|ssr|ss|socks5|socks|https|http|hysteria2|hysteria|hy2|tuic|wireguard|warp|naive|brook)://",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled);
-
-    public static IReadOnlyList<string> SplitConfigs(string text)
-    {
-        var matches = ConfigScheme.Matches(text);
-        if (matches.Count == 0)
-        {
-            var single = text.Trim();
-            return single.Length > 0 ? new List<string> { single } : new List<string>();
-        }
-
-        var configs = new List<string>();
-        for (var i = 0; i < matches.Count; i++)
-        {
-            var start = matches[i].Index;
-            var end = i + 1 < matches.Count ? matches[i + 1].Index : text.Length;
-            var entry = text[start..end].Trim();
-            if (entry.Length > 0) configs.Add(entry);
-        }
-
-        return configs;
-    }
-
-    public static V2RayProfile Parse(string text)
-    {
-        var raw = text.Trim();
-        if (!Uri.TryCreate(raw, UriKind.Absolute, out var uri))
-        {
-            return new V2RayProfile { Name = "custom config", Protocol = "custom", RawUri = raw };
-        }
-
-        return uri.Scheme.ToLowerInvariant() switch
-        {
-            "vless" => ParseCommonUri(uri, raw, "vless"),
-            "trojan" => ParseCommonUri(uri, raw, "trojan"),
-            "vmess" => ParseVmess(raw),
-            "ss" => ParseShadowsocks(uri, raw),
-            _ => ParseCommonUri(uri, raw, uri.Scheme.ToLowerInvariant()),
-        };
-    }
-
-    private static V2RayProfile ParseCommonUri(Uri uri, string raw, string protocol)
-    {
-        var query = ParseQuery(uri.Query);
-        var name = string.IsNullOrWhiteSpace(uri.Fragment)
-            ? $"{protocol} {uri.Host}"
-            : WebUtility.UrlDecode(uri.Fragment.TrimStart('#'));
-
-        return new V2RayProfile
-        {
-            Name = name,
-            Protocol = protocol,
-            Address = uri.Host,
-            Port = uri.Port > 0 ? uri.Port : 443,
-            UserId = WebUtility.UrlDecode(uri.UserInfo),
-            Security = query.GetValueOrDefault("security") ?? query.GetValueOrDefault("type") ?? "",
-            Transport = query.GetValueOrDefault("type") ?? "tcp",
-            ServerName = query.GetValueOrDefault("sni") ?? query.GetValueOrDefault("host") ?? "",
-            RawUri = raw,
-        };
-    }
-
-    private static V2RayProfile ParseVmess(string raw)
-    {
-        var payload = raw["vmess://".Length..].Trim();
-        var json = DecodeBase64Url(payload);
-        using var doc = JsonDocument.Parse(json);
-        var root = doc.RootElement;
-
-        return new V2RayProfile
-        {
-            Name = GetString(root, "ps", "vmess config"),
-            Protocol = "vmess",
-            Address = GetString(root, "add", ""),
-            Port = int.TryParse(GetString(root, "port", "443"), out var port) ? port : 443,
-            UserId = GetString(root, "id", ""),
-            Security = GetString(root, "tls", ""),
-            Transport = GetString(root, "net", "tcp"),
-            ServerName = GetString(root, "sni", GetString(root, "host", "")),
-            RawUri = raw,
-        };
-    }
-
-    private static V2RayProfile ParseShadowsocks(Uri uri, string raw)
-    {
-        if (string.IsNullOrWhiteSpace(uri.Host))
-        {
-            var payload = raw["ss://".Length..].Split('#', 2)[0].Split('?', 2)[0];
-            var decoded = DecodeBase64Url(payload);
-            if (Uri.TryCreate($"ss://{decoded}", UriKind.Absolute, out var decodedUri))
-            {
-                return ParseShadowsocks(decodedUri, raw);
-            }
-        }
-
-        var name = string.IsNullOrWhiteSpace(uri.Fragment)
-            ? $"ss {uri.Host}"
-            : WebUtility.UrlDecode(uri.Fragment.TrimStart('#'));
-
-        return new V2RayProfile
-        {
-            Name = name,
-            Protocol = "ss",
-            Address = uri.Host,
-            Port = uri.Port > 0 ? uri.Port : 443,
-            UserId = WebUtility.UrlDecode(uri.UserInfo),
-            RawUri = raw,
-        };
-    }
-
-    private static Dictionary<string, string> ParseQuery(string query)
-    {
-        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var pair in query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries))
-        {
-            var parts = pair.Split('=', 2);
-            if (parts.Length == 2)
-            {
-                result[WebUtility.UrlDecode(parts[0])] = WebUtility.UrlDecode(parts[1]);
-            }
-        }
-
-        return result;
-    }
-
-    private static string DecodeBase64Url(string value)
-    {
-        value = value.Replace('-', '+').Replace('_', '/');
-        value = value.PadRight(value.Length + (4 - value.Length % 4) % 4, '=');
-        return Encoding.UTF8.GetString(Convert.FromBase64String(value));
-    }
-
-    private static string GetString(JsonElement root, string name, string fallback) =>
-        root.TryGetProperty(name, out var value) ? value.GetString() ?? fallback : fallback;
-}
+public sealed record ImportResult(IReadOnlyList<V2RayProfile> Imported, int Failed, int Duplicates);
+public sealed record ImportPreview(IReadOnlyList<ImportPreviewItem> Items, int Invalid, int Duplicates);
+public sealed record ImportPreviewItem(string Name, string Protocol, string Address, int Port, string Security, bool Duplicate);

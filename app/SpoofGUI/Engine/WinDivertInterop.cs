@@ -48,16 +48,27 @@ internal static class WinDivert
     private static IEnumerable<string> CandidatePaths()
     {
         var engineDir = Path.Combine(AppContext.BaseDirectory, "engine");
+        var baseDir = AppContext.BaseDirectory;
         yield return Path.Combine(engineDir, Library);
+        yield return Path.Combine(baseDir, Library);
         if (Environment.Is64BitProcess)
+        {
             yield return Path.Combine(engineDir, "WinDivert64.dll");
+            yield return Path.Combine(baseDir, "WinDivert64.dll");
+        }
     }
+
+    public static string EngineDirectory => Path.Combine(AppContext.BaseDirectory, "engine");
+
+    public static string RequiredDriverName => Environment.Is64BitProcess ? "WinDivert64.sys" : "WinDivert32.sys";
+
+    public static bool IsAvailable() =>
+        CandidatePaths().Any(File.Exists) && File.Exists(Path.Combine(EngineDirectory, RequiredDriverName));
 
     public static void EnsureLoadable()
     {
-        if (CandidatePaths().Any(File.Exists)) return;
-        throw new FileNotFoundException(
-            $"WinDivert native library not found under {Path.Combine(AppContext.BaseDirectory, "engine")}");
+        if (IsAvailable()) return;
+        throw new FileNotFoundException($"WinDivert files not found under {EngineDirectory}");
     }
 
     [DllImport(Library, CharSet = CharSet.Ansi, SetLastError = true)]

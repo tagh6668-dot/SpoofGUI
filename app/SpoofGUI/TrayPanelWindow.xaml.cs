@@ -66,6 +66,27 @@ public sealed partial class TrayPanelWindow : Window
 
     public void ShowPanel()
     {
+        TrayStatusLine.Visibility = Visibility.Collapsed;
+        TrayStatusLine.Text = "";
+        PopulateProfiles();
+        MoveToTray();
+        _shown = true;
+        _appWindow.Show();
+        Activate();
+        try { SetForegroundWindow(_hwnd); } catch { }
+
+        _sampler.Reset();
+        _ = RefreshAsync();
+        _timer.Start();
+
+        _dispatcher.TryEnqueue(DispatcherQueuePriority.Low, MoveToTray);
+    }
+
+    private void ResizeAfterLayout() =>
+        _dispatcher.TryEnqueue(DispatcherQueuePriority.Low, MoveToTray);
+
+    private void MoveToTray()
+    {
         var scale = GetDpiForWindow(_hwnd) / 96.0;
         if (scale <= 0) scale = 1.0;
 
@@ -73,27 +94,17 @@ public sealed partial class TrayPanelWindow : Window
         var desired = RootCard.DesiredSize;
         var w = desired.Width > 10 ? desired.Width : 308;
         var h = desired.Height > 10 ? desired.Height : 384;
-        var winW = (int)Math.Ceiling(w * scale);
-        var winH = (int)Math.Ceiling(h * scale);
 
         var px = 0; var py = 0;
         if (GetCursorPos(out var pt)) { px = pt.X; py = pt.Y; }
         var area = DisplayArea.GetFromPoint(new PointInt32(px, py), DisplayAreaFallback.Primary);
         var wa = area.WorkArea;
         var margin = (int)(12 * scale);
+        var winW = (int)Math.Ceiling(w * scale);
+        var winH = Math.Min((int)Math.Ceiling(h * scale), wa.Height - (margin * 2));
         var x = wa.X + wa.Width - winW - margin;
         var y = wa.Y + wa.Height - winH - margin;
         _appWindow.MoveAndResize(new RectInt32(x, y, winW, winH));
-
-        _shown = true;
-        _appWindow.Show();
-        Activate();
-        try { SetForegroundWindow(_hwnd); } catch { }
-
-        _sampler.Reset();
-        PopulateProfiles();
-        _ = RefreshAsync();
-        _timer.Start();
     }
 
     private void PopulateProfiles()
@@ -176,13 +187,23 @@ public sealed partial class TrayPanelWindow : Window
             var engine = App.Services.GetRequiredService<EngineClient>();
             var xray = App.Services.GetRequiredService<XrayCoreService>();
             var tunnel = App.Services.GetRequiredService<SingBoxTunnelService>();
+            var settings = App.Services.GetRequiredService<AppSettings>();
             var active = App.Services.GetRequiredService<ProfileRepository>().GetActive();
 
             var status = await engine.StatusAsync();
             var sniLive = status.Running;
             var v2Live = xray.IsRunning || tunnel.IsRunning;
+            var live = sniLive || v2Live;
 
             _sampler.Tick();
+
+            var conns = status.Connections;
+            if (v2Live && !tunnel.IsRunning)
+            {
+                var ports = App.Services.GetRequiredService<ProxyPortSettings>();
+                conns += NetStats.CountEstablishedOnLocalPort(ports.SocksPort)
+                       + NetStats.CountEstablishedOnLocalPort(ports.HttpPort);
+            }
 
             _dispatcher.TryEnqueue(() =>
             {
@@ -197,12 +218,13 @@ public sealed partial class TrayPanelWindow : Window
                     TrayProfileTarget.Text = "—";
                 }
 
-                ApplyLiveVisual(sniLive);
+                ApplyLiveVisual(live);
+                TrayModeLine.Text = $"V2Ray: {settings.V2RayMode}";
 
-                TrayUptime.Text = sniLive ? FormatUptime(status.UptimeMs) : "—";
-                TrayDown.Text = sniLive ? NetStats.FormatRate(_sampler.RecvBps) : "0 B/s";
-                TrayUp.Text = sniLive ? NetStats.FormatRate(_sampler.SendBps) : "0 B/s";
-                TrayConns.Text = status.Connections.ToString();
+                TrayUptime.Text = sniLive ? FormatUptime(status.UptimeMs) : v2Live ? "live" : "—";
+                TrayDown.Text = live ? NetStats.FormatRate(_sampler.RecvBps) : "0 B/s";
+                TrayUp.Text = live ? NetStats.FormatRate(_sampler.SendBps) : "0 B/s";
+                TrayConns.Text = conns.ToString();
 
                 TraySniIcon.Symbol = sniLive ? Symbol.Stop : Symbol.Play;
                 TraySniLabel.Text = sniLive ? "disconnect SNI engine" : "connect SNI engine";
@@ -281,6 +303,7 @@ public sealed partial class TrayPanelWindow : Window
                     ShowTrayStatus("no active profile — open SpoofGUI and pick one");
                 else
                 {
+                    if (!await EnsureWinDivertAsync()) return;
                     await engine.StartSpoofAsync(active);
                     guard.ArmSni();
                     ShowTrayStatus($"SNI engine live · {active.FakeSni}");
@@ -296,6 +319,7 @@ public sealed partial class TrayPanelWindow : Window
             SetTraySniBusy(false);
             _busy = false;
             await RefreshAsync();
+            ResizeAfterLayout();
         }
     }
 
@@ -337,6 +361,7 @@ public sealed partial class TrayPanelWindow : Window
             SetTrayV2RayBusy(false);
             _busy = false;
             await RefreshAsync();
+            ResizeAfterLayout();
         }
     }
 
@@ -377,6 +402,7 @@ public sealed partial class TrayPanelWindow : Window
         TraySniContent.Visibility = on ? Visibility.Collapsed : Visibility.Visible;
         TraySniSpinner.IsActive = on;
         TraySniSpinner.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
+        ResizeAfterLayout();
     }
 
     private void SetTrayV2RayBusy(bool on)
@@ -385,12 +411,59 @@ public sealed partial class TrayPanelWindow : Window
         TrayV2RayContent.Visibility = on ? Visibility.Collapsed : Visibility.Visible;
         TrayV2RaySpinner.IsActive = on;
         TrayV2RaySpinner.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
+        ResizeAfterLayout();
     }
 
     private void ShowTrayStatus(string text)
     {
         TrayStatusLine.Text = text;
         TrayStatusLine.Visibility = Visibility.Visible;
+        ResizeAfterLayout();
+    }
+
+    private async Task<bool> EnsureWinDivertAsync()
+    {
+        if (WinDivert.IsAvailable()) return true;
+
+        var askDownload = new ContentDialog
+        {
+            Title = "WinDivert not found",
+            Content = "SpoofGUI no longer bundles WinDivert in the installer because some antivirus tools flag installer temp extraction. Download official WinDivert now?",
+            PrimaryButtonText = "download",
+            CloseButtonText = "cancel",
+            XamlRoot = RootCard.XamlRoot,
+        };
+        if (await askDownload.ShowAsync() != ContentDialogResult.Primary)
+        {
+            ShowTrayStatus("WinDivert is required for SNI engine");
+            return false;
+        }
+
+        var archBox = new ComboBox { MinWidth = 220, SelectedIndex = Environment.Is64BitOperatingSystem ? 0 : 1 };
+        archBox.Items.Add(new ComboBoxItem { Content = "amd64" });
+        archBox.Items.Add(new ComboBoxItem { Content = "x86" });
+        var askArch = new ContentDialog
+        {
+            Title = "Choose desktop architecture",
+            Content = archBox,
+            PrimaryButtonText = "continue",
+            CloseButtonText = "cancel",
+            XamlRoot = RootCard.XamlRoot,
+        };
+        if (await askArch.ShowAsync() != ContentDialogResult.Primary) return false;
+
+        var arch = ((ComboBoxItem)archBox.SelectedItem).Content?.ToString() ?? "amd64";
+        var progress = new Progress<string>(ShowTrayStatus);
+        try
+        {
+            await WinDivertDownloader.DownloadAsync(arch, progress);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            ShowTrayStatus($"WinDivert download failed: {ex.Message}");
+            return false;
+        }
     }
 
     private static string Endpoint(ProxyPortSettings ports) =>

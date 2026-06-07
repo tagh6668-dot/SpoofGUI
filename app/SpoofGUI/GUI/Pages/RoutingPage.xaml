@@ -1,0 +1,293 @@
+<Page
+    x:Class="SpoofGUI.GUI.Pages.RoutingPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    NavigationCacheMode="Required"
+    Background="{StaticResource SurfaceBase}">
+
+    <Grid Padding="32,48,32,32" RowSpacing="24">
+        <Grid.ChildrenTransitions>
+            <TransitionCollection>
+                <EntranceThemeTransition FromVerticalOffset="16" IsStaggeringEnabled="True" />
+            </TransitionCollection>
+        </Grid.ChildrenTransitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Spacing="6">
+            <TextBlock Text="Routing" Style="{StaticResource TextCaption}" />
+            <TextBlock Text="traffic rules" Style="{StaticResource TextDisplay}" />
+            <TextBlock Text="Tunnel mode (sing-box) only. Rules match top-down; first match wins. App, domain-suffix and IP-CIDR rules route to proxy, direct, or block. LAN and private ranges always go direct. Applies on next connect."
+                       Style="{StaticResource TextBodyMuted}"
+                       MaxWidth="720" />
+        </StackPanel>
+
+        <Border x:Name="ModeWarning"
+                Grid.Row="1"
+                Background="{StaticResource SurfaceSunken}"
+                BorderBrush="{StaticResource StatusWarn}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="14,10"
+                Visibility="Collapsed">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <SymbolIcon Symbol="Important" Foreground="{StaticResource StatusWarn}" />
+                <TextBlock Text="Connection mode is not Tunnel. These rules only take effect in Tunnel mode (set it on the V2Ray page)."
+                           Style="{StaticResource TextBody}"
+                           Foreground="{StaticResource TextSecondary}"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+        </Border>
+
+        <Grid Grid.Row="2" ColumnSpacing="24">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="360" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0"
+                    Background="{StaticResource SurfaceRaised}"
+                    BorderBrush="{StaticResource BorderSubtle}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Padding="20">
+                <Grid RowSpacing="14">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Text="rules" Style="{StaticResource TextH2}" />
+                            <TextBlock x:Name="RuleCountText" Text="0 rules" Style="{StaticResource TextCaption}" />
+                        </StackPanel>
+                        <Button x:Name="AddRuleButton"
+                                Grid.Column="1"
+                                Style="{StaticResource PrimaryButton}"
+                                Padding="12,6"
+                                Click="OnAddRule">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <SymbolIcon Symbol="Add" Foreground="#15181E" />
+                                <TextBlock Text="new rule" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+
+                    <ListView x:Name="RuleList"
+                              Grid.Row="1"
+                              SelectionMode="None"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto"
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="Margin" Value="0,0,0,8" />
+                                <Setter Property="MinHeight" Value="0" />
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemContainerTransitions>
+                            <TransitionCollection>
+                                <AddDeleteThemeTransition />
+                                <ContentThemeTransition />
+                            </TransitionCollection>
+                        </ListView.ItemContainerTransitions>
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Border CornerRadius="8"
+                                        Padding="12,10"
+                                        Background="{StaticResource SurfaceSunken}"
+                                        BorderBrush="{StaticResource BorderSubtle}"
+                                        BorderThickness="1">
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="64" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0"
+                                                Background="{StaticResource SurfaceRaised}"
+                                                BorderBrush="{StaticResource BorderSubtle}"
+                                                BorderThickness="1"
+                                                CornerRadius="4"
+                                                Padding="0,3"
+                                                HorizontalAlignment="Left">
+                                            <TextBlock Text="{Binding KindLabel}"
+                                                       HorizontalAlignment="Center"
+                                                       FontSize="11"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{StaticResource TextSecondary}" />
+                                        </Border>
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding Pattern}"
+                                                   Style="{StaticResource TextMono}"
+                                                   Foreground="{StaticResource TextPrimary}"
+                                                   VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <Border Grid.Column="2"
+                                                VerticalAlignment="Center"
+                                                BorderBrush="{StaticResource BorderStrong}"
+                                                BorderThickness="1"
+                                                CornerRadius="4"
+                                                Padding="10,3">
+                                            <TextBlock Text="{Binding OutboundLabel}"
+                                                       FontSize="11"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{StaticResource AccentBase}" />
+                                        </Border>
+                                        <ToggleSwitch Grid.Column="3"
+                                                      IsOn="{Binding Enabled, Mode=TwoWay}"
+                                                      OnContent=""
+                                                      OffContent=""
+                                                      MinWidth="0"
+                                                      VerticalAlignment="Center"
+                                                      Toggled="OnRuleToggled"
+                                                      Tag="{Binding}" />
+                                        <Button Grid.Column="4"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Padding="6"
+                                                VerticalAlignment="Center"
+                                                Click="OnDeleteRule"
+                                                Tag="{Binding}">
+                                            <SymbolIcon Symbol="Delete" Foreground="{StaticResource StatusDanger}" />
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </Grid>
+            </Border>
+
+            <Border Grid.Column="1"
+                    Background="{StaticResource SurfaceSunken}"
+                    BorderBrush="{StaticResource BorderSubtle}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Padding="18">
+                <Grid RowSpacing="14">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Spacing="2">
+                        <TextBlock Text="proxy chain" Style="{StaticResource TextH2}" />
+                        <TextBlock Text="Order = entry → exit. Empty chain uses the connected config directly."
+                                   Style="{StaticResource TextCaption}" />
+                    </StackPanel>
+
+                    <Button Grid.Row="1"
+                            x:Name="AddHopButton"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Style="{StaticResource SecondaryButton}"
+                            Click="OnAddHop">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <SymbolIcon Symbol="Add" Foreground="{StaticResource AccentBase}" />
+                            <TextBlock Text="add hop" />
+                        </StackPanel>
+                    </Button>
+
+                    <ListView x:Name="ChainList"
+                              Grid.Row="2"
+                              SelectionMode="None"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="Margin" Value="0,0,0,8" />
+                                <Setter Property="MinHeight" Value="0" />
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemContainerTransitions>
+                            <TransitionCollection>
+                                <AddDeleteThemeTransition />
+                                <ReorderThemeTransition />
+                            </TransitionCollection>
+                        </ListView.ItemContainerTransitions>
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Border CornerRadius="8"
+                                        Padding="12,10"
+                                        Background="{StaticResource SurfaceRaised}"
+                                        BorderBrush="{StaticResource BorderSubtle}"
+                                        BorderThickness="1">
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Name}"
+                                                       Style="{StaticResource TextBody}"
+                                                       FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding Summary}"
+                                                       Style="{StaticResource TextMono}"
+                                                       FontSize="12"
+                                                       Foreground="{StaticResource TextSecondary}"
+                                                       TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                        <Button Grid.Column="1"
+                                                Background="Transparent" BorderThickness="0" Padding="4"
+                                                VerticalAlignment="Center"
+                                                Click="OnHopUp" Tag="{Binding}">
+                                            <FontIcon FontFamily="Segoe Fluent Icons,Segoe MDL2 Assets" Glyph="&#xE70E;" FontSize="14" Foreground="{StaticResource TextSecondary}" />
+                                        </Button>
+                                        <Button Grid.Column="2"
+                                                Background="Transparent" BorderThickness="0" Padding="4"
+                                                VerticalAlignment="Center"
+                                                Click="OnHopDown" Tag="{Binding}">
+                                            <FontIcon FontFamily="Segoe Fluent Icons,Segoe MDL2 Assets" Glyph="&#xE70D;" FontSize="14" Foreground="{StaticResource TextSecondary}" />
+                                        </Button>
+                                        <Button Grid.Column="3"
+                                                Background="Transparent" BorderThickness="0" Padding="4"
+                                                VerticalAlignment="Center"
+                                                Click="OnHopRemove" Tag="{Binding}">
+                                            <SymbolIcon Symbol="Delete" Foreground="{StaticResource StatusDanger}" />
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+
+                    <StackPanel Grid.Row="3" Spacing="10">
+                        <Border Style="{StaticResource SectionDivider}" Margin="0" />
+                        <Button x:Name="ClearChainButton"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Center"
+                                Style="{StaticResource SecondaryButton}"
+                                Click="OnClearChain">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <SymbolIcon Symbol="Clear" Foreground="{StaticResource TextPrimary}" />
+                                <TextBlock Text="clear chain" />
+                            </StackPanel>
+                        </Button>
+                        <TextBlock x:Name="StatusText"
+                                   Style="{StaticResource TextCaption}"
+                                   Foreground="{StaticResource TextSecondary}"
+                                   Text="" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</Page>
