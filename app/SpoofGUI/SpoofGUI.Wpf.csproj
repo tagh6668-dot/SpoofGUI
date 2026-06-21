@@ -45,6 +45,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Enable implicit/global usings for standard .NET namespaces in the WPF build -->
+    <Using Include="System.IO" />
+    <Using Include="System.Net.Http" />
+    <Using Include="System.Threading" />
+    <Using Include="System.Threading.Tasks" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ApplicationDefinition Include="WpfApp.xaml" />
   </ItemGroup>
 
