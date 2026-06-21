@@ -54,7 +54,13 @@ public static class WpfProgram
 
     private static void RelaunchAsAdministrator(string[] args)
     {
-        var exe = Process.GetCurrentProcess().MainModule?.FileName;
+        string? exe = null;
+        try
+        {
+            exe = Process.GetCurrentProcess().MainModule?.FileName;
+        }
+        catch { }
+
         if (string.IsNullOrWhiteSpace(exe))
             exe = Environment.ProcessPath;
         if (string.IsNullOrWhiteSpace(exe))
