@@ -106,7 +106,8 @@ public sealed class AppSettings
         {
             var value = _settings.Get(ProxyChainKey);
             if (string.IsNullOrWhiteSpace(value)) return [];
-            return value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            return value.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim())
                 .Select(s => long.TryParse(s, out var id) ? id : 0)
                 .Where(id => id > 0)
                 .ToList();
