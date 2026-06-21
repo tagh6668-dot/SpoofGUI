@@ -186,14 +186,22 @@ foreach ($a in $Arch) {
     Assert-Exists (Join-Path $publishDir "engine\wintun.dll") "published wintun.dll"
 
     if (Test-Path $stageArch) { Remove-Item -Recurse -Force $stageArch }
-    $appSub = Join-Path $stageArch "app"
-    New-Item -ItemType Directory -Force -Path $appSub | Out-Null
-    Copy-Item -Path (Join-Path $publishDir "*") -Destination $appSub -Recurse -Force
-    Remove-Item -Force (Join-Path $appSub "engine\WinDivert.dll") -ErrorAction SilentlyContinue
-    Remove-Item -Force (Join-Path $appSub "engine\WinDivert32.sys") -ErrorAction SilentlyContinue
-    Remove-Item -Force (Join-Path $appSub "engine\WinDivert64.sys") -ErrorAction SilentlyContinue
-    Build-Launcher -ArchName $a -OutExe (Join-Path $stageArch "SpoofGUI.exe")
-    Assert-Exists (Join-Path $stageArch "SpoofGUI.exe") "launcher SpoofGUI.exe"
+    if ($a -eq "x86") {
+        New-Item -ItemType Directory -Force -Path $stageArch | Out-Null
+        Copy-Item -Path (Join-Path $publishDir "*") -Destination $stageArch -Recurse -Force
+        Remove-Item -Force (Join-Path $stageArch "engine\WinDivert.dll") -ErrorAction SilentlyContinue
+        Remove-Item -Force (Join-Path $stageArch "engine\WinDivert32.sys") -ErrorAction SilentlyContinue
+        Remove-Item -Force (Join-Path $stageArch "engine\WinDivert64.sys") -ErrorAction SilentlyContinue
+    } else {
+        $appSub = Join-Path $stageArch "app"
+        New-Item -ItemType Directory -Force -Path $appSub | Out-Null
+        Copy-Item -Path (Join-Path $publishDir "*") -Destination $appSub -Recurse -Force
+        Remove-Item -Force (Join-Path $appSub "engine\WinDivert.dll") -ErrorAction SilentlyContinue
+        Remove-Item -Force (Join-Path $appSub "engine\WinDivert32.sys") -ErrorAction SilentlyContinue
+        Remove-Item -Force (Join-Path $appSub "engine\WinDivert64.sys") -ErrorAction SilentlyContinue
+        Build-Launcher -ArchName $a -OutExe (Join-Path $stageArch "SpoofGUI.exe")
+        Assert-Exists (Join-Path $stageArch "SpoofGUI.exe") "launcher SpoofGUI.exe"
+    }
 
     $zipPath = Join-Path $distDir "SpoofGUI-Portable-$a.zip"
     if (Test-Path $zipPath) { Remove-Item -Force $zipPath }
