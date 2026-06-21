@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -22,15 +23,13 @@ public partial class WpfMainWindow : Window, IMainPage
     private readonly V2RayPageViewModel _v2rayVm;
     private readonly RoutingRuleRepository _routingRepo;
     private readonly SettingsRepository _settingsRepo;
-    private readonly AppSettings _appSettings;
-    private readonly ProxyPortSettings _portSettings;
+    private readonly SettingsPageViewModel _settingsVm;
+    private readonly SniScannerPageViewModel _sniScannerVm;
     private readonly EngineSupervisor _engineSupervisor;
     private readonly EngineClient _engineClient;
-    private readonly SniScannerService _scannerService;
 
     private readonly DispatcherTimer _uiTimer;
     private string _currentOutboundIface = "—";
-    private bool _isClosing = false;
 
     public WpfMainWindow()
     {
@@ -41,11 +40,10 @@ public partial class WpfMainWindow : Window, IMainPage
         _v2rayVm = WpfApp.Services.GetRequiredService<V2RayPageViewModel>();
         _routingRepo = WpfApp.Services.GetRequiredService<RoutingRuleRepository>();
         _settingsRepo = WpfApp.Services.GetRequiredService<SettingsRepository>();
-        _appSettings = WpfApp.Services.GetRequiredService<AppSettings>();
-        _portSettings = WpfApp.Services.GetRequiredService<ProxyPortSettings>();
+        _settingsVm = WpfApp.Services.GetRequiredService<SettingsPageViewModel>();
+        _sniScannerVm = WpfApp.Services.GetRequiredService<SniScannerPageViewModel>();
         _engineSupervisor = WpfApp.Services.GetRequiredService<EngineSupervisor>();
         _engineClient = WpfApp.Services.GetRequiredService<EngineClient>();
-        _scannerService = WpfApp.Services.GetRequiredService<SniScannerService>();
 
         _settingsRepo.Set("app_running", "1");
 
@@ -73,7 +71,6 @@ public partial class WpfMainWindow : Window, IMainPage
 
     private void OnClosed(object? sender, EventArgs e)
     {
-        _isClosing = true;
         _uiTimer.Stop();
 
         try { WpfApp.Services.GetRequiredService<ConnectionGuard>().Dispose(); } catch { }
@@ -83,7 +80,7 @@ public partial class WpfMainWindow : Window, IMainPage
         try { _settingsRepo.Set("app_running", "0"); } catch { }
         try
         {
-            var endpoint = $"http=127.0.0.1:{_portSettings.HttpPort};https=127.0.0.1:{_portSettings.HttpPort};socks=127.0.0.1:{_portSettings.SocksPort}";
+            var endpoint = $"http=127.0.0.1:{_settingsVm.HttpPort};https=127.0.0.1:{_settingsVm.HttpPort};socks=127.0.0.1:{_settingsVm.SocksPort}";
             if (SystemProxy.IsOurs(endpoint)) SystemProxy.Disable();
         }
         catch { }
@@ -369,7 +366,7 @@ public partial class WpfMainWindow : Window, IMainPage
         {
             var res = await _v2rayVm.UpdateAllSubscriptionsAsync();
             LoadV2RayProfiles();
-            MessageBox.Show($"Update all completed: {res.StatusText}", "Update Subscription", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show($"Update all completed: {res.Status}", "Update Subscription", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
@@ -390,7 +387,7 @@ public partial class WpfMainWindow : Window, IMainPage
             {
                 var res = await _v2rayVm.UpdateSubscriptionAsync(sub);
                 LoadV2RayProfiles();
-                MessageBox.Show($"Update completed: {res.StatusText}", "Update Subscription", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show($"Update completed: {res.Status}", "Update Subscription", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
@@ -447,7 +444,7 @@ public partial class WpfMainWindow : Window, IMainPage
         {
             var rules = _routingRepo.All();
             RoutingRulesListBox.ItemsSource = rules;
-            RoutingRulesListBox.DisplayMemberPath = "Value";
+            RoutingRulesListBox.DisplayMemberPath = "Pattern";
         }
         catch { }
     }
@@ -461,9 +458,9 @@ public partial class WpfMainWindow : Window, IMainPage
         {
             var rule = new RoutingRule
             {
-                Type = (RuleTypeComboBox.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "domain",
-                Value = RuleValueTxt.Text.Trim(),
-                Action = (RuleActionComboBox.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "proxy"
+                Kind = (RuleTypeComboBox.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "domain",
+                Pattern = RuleValueTxt.Text.Trim(),
+                Outbound = (RuleActionComboBox.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "proxy"
             };
 
             _routingRepo.Upsert(rule);
@@ -483,42 +480,42 @@ public partial class WpfMainWindow : Window, IMainPage
     private void ScannerStartBtn_Click(object sender, RoutedEventArgs e)
     {
         string host = ScannerTargetHostTxt.Text;
-        if (!int.TryParse(ScannerTargetPortTxt.Text, out int port) ||
-            !int.TryParse(ScannerThreadsTxt.Text, out int threads) ||
-            !int.TryParse(ScannerTimeoutTxt.Text, out int timeout))
+        if (string.IsNullOrWhiteSpace(host))
         {
-            MessageBox.Show("Invalid port, threads, or timeout value.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show("Please enter a host or list of domains.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             return;
         }
 
         ScannerStartBtn.IsEnabled = false;
         ScannerStopBtn.IsEnabled = true;
         ScannerLogTxt.Text = "SNI Scanner started...\r\n";
-        ScannerProgressBar.IsIndeterminate = true;
+        ScannerProgressBar.Value = 0;
 
         _scanCts = new CancellationTokenSource();
 
-        var dns = ScannerDnsTxt.Text;
-
         Task.Run(async () =>
         {
-            var progress = new Progress<string>(msg =>
+            var progress = new Progress<int>(percent =>
             {
                 Dispatcher.BeginInvoke(() =>
                 {
-                    ScannerLogTxt.AppendText(msg + "\r\n");
-                    ScannerLogTxt.ScrollToEnd();
+                    ScannerProgressBar.Value = percent;
                 });
             });
 
             try
             {
-                await _scannerService.ScanAsync(host, port, timeout, threads, dns, progress, _scanCts.Token);
+                var domains = _sniScannerVm.ParseDomains(host);
+                var verifyHttp = true;
+                var results = await _sniScannerVm.ScanAsync(domains, verifyHttp, progress, _scanCts.Token);
+                
                 Dispatcher.BeginInvoke(() =>
                 {
-                    ScannerLogTxt.AppendText("Scan completed.\r\n");
-                    ScannerProgressBar.IsIndeterminate = false;
-                    ScannerProgressBar.Value = 100;
+                    ScannerLogTxt.AppendText($"Scan completed. Scanned {domains.Count} domains. Usable SNIs found: {results.Count(r => r.UsableAsSni)}\r\n");
+                    foreach (var r in results.Where(x => x.UsableAsSni))
+                    {
+                        ScannerLogTxt.AppendText($"[OK] {r.Domain} ({r.LatencyMs}ms)\r\n");
+                    }
                 });
             }
             catch (OperationCanceledException)
@@ -535,7 +532,6 @@ public partial class WpfMainWindow : Window, IMainPage
                 {
                     ScannerStartBtn.IsEnabled = true;
                     ScannerStopBtn.IsEnabled = false;
-                    ScannerProgressBar.IsIndeterminate = false;
                 });
             }
         });
@@ -548,15 +544,18 @@ public partial class WpfMainWindow : Window, IMainPage
     #endregion
 
     #region Active Connections Tab
-    private async void RefreshConnections()
+    private void RefreshConnections()
     {
         try
         {
-            var conns = await _engineClient.ActiveConnectionsAsync();
+            var active = _configVm.All().FirstOrDefault(p => p.IsActive);
+            var watched = new List<int> { active?.ListenPort ?? 40443, _settingsVm.SocksPort, _settingsVm.HttpPort };
+
+            var conns = NetStats.ActiveConnections(watched);
             ConnectionsListBox.ItemsSource = null;
             if (conns != null)
             {
-                ConnectionsListBox.ItemsSource = conns.Select(c => $"{c.Protocol.ToUpper()}  {c.LocalAddress}:{c.LocalPort}  ->  {c.RemoteAddress}:{c.RemotePort}   [{c.State}]   ({c.PayloadBytes} bytes)");
+                ConnectionsListBox.ItemsSource = conns.Select(c => $"TCP  {c.Local}  ->  {c.Remote}   [{c.State}]");
             }
         }
         catch { }
@@ -571,26 +570,27 @@ public partial class WpfMainWindow : Window, IMainPage
     #region Settings Tab
     private void LoadSettings()
     {
-        SettingsSocksPortTxt.Text = _portSettings.SocksPort.ToString();
-        SettingsHttpPortTxt.Text = _portSettings.HttpPort.ToString();
-        SettingsDivertPortTxt.Text = _portSettings.LocalDnsPort.ToString();
-        SettingsDnsTxt.Text = string.Join(", ", _appSettings.FallbackDns);
-        SettingsCheckUpdatesCb.IsChecked = _appSettings.CheckUpdatesOnLaunch;
+        SettingsSocksPortTxt.Text = _settingsVm.SocksPort.ToString();
+        SettingsHttpPortTxt.Text = _settingsVm.HttpPort.ToString();
+        SettingsRemoteDnsTxt.Text = _settingsVm.RemoteDns;
+        SettingsDirectDnsTxt.Text = _settingsVm.DirectDns;
+        SettingsBootstrapDnsTxt.Text = _settingsVm.BootstrapDns;
+        SettingsCheckUpdatesCb.IsChecked = _settingsVm.CheckUpdatesOnLaunch;
     }
 
     private void SettingsSaveBtn_Click(object sender, RoutedEventArgs e)
     {
         try
         {
-            _portSettings.SocksPort = int.Parse(SettingsSocksPortTxt.Text);
-            _portSettings.HttpPort = int.Parse(SettingsHttpPortTxt.Text);
-            _portSettings.LocalDnsPort = int.Parse(SettingsDivertPortTxt.Text);
+            var err = _settingsVm.SavePorts(SettingsSocksPortTxt.Text, SettingsHttpPortTxt.Text);
+            if (err != null)
+            {
+                MessageBox.Show($"Failed to save ports: {err}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
 
-            var dnsList = SettingsDnsTxt.Text.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                                             .Select(s => s.Trim())
-                                             .ToList();
-            _appSettings.FallbackDns = dnsList;
-            _appSettings.CheckUpdatesOnLaunch = SettingsCheckUpdatesCb.IsChecked ?? false;
+            _settingsVm.SaveDns(SettingsRemoteDnsTxt.Text, SettingsDirectDnsTxt.Text, SettingsBootstrapDnsTxt.Text);
+            _settingsVm.CheckUpdatesOnLaunch = SettingsCheckUpdatesCb.IsChecked ?? false;
 
             MessageBox.Show("Settings saved successfully.", "Settings", MessageBoxButton.OK, MessageBoxImage.Information);
         }

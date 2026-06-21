@@ -464,12 +464,16 @@
                                 <TextBox x:Name="SettingsHttpPortTxt" />
                             </StackPanel>
                             <StackPanel Margin="0,0,0,16">
-                                <TextBlock Text="WinDivert Local Port" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6"/>
-                                <TextBox x:Name="SettingsDivertPortTxt" />
+                                <TextBlock Text="Remote DNS (e.g. 8.8.8.8)" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6"/>
+                                <TextBox x:Name="SettingsRemoteDnsTxt" />
                             </StackPanel>
                             <StackPanel Margin="0,0,0,16">
-                                <TextBlock Text="Fallback DNS Servers" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6"/>
-                                <TextBox x:Name="SettingsDnsTxt" />
+                                <TextBlock Text="Direct DNS (e.g. 1.1.1.1)" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6"/>
+                                <TextBox x:Name="SettingsDirectDnsTxt" />
+                            </StackPanel>
+                            <StackPanel Margin="0,0,0,16">
+                                <TextBlock Text="Bootstrap DNS (e.g. 223.5.5.5)" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6"/>
+                                <TextBox x:Name="SettingsBootstrapDnsTxt" />
                             </StackPanel>
                             <CheckBox x:Name="SettingsCheckUpdatesCb" Content="Check for updates on launch" Foreground="{StaticResource TextPrimaryBrush}" FontSize="13" VerticalContentAlignment="Center" />
                         </StackPanel>
