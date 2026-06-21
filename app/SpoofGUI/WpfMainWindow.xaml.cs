@@ -514,7 +514,7 @@ public partial class WpfMainWindow : Window, IMainPage
                     ScannerLogTxt.AppendText($"Scan completed. Scanned {domains.Count} domains. Usable SNIs found: {results.Count(r => r.UsableAsSni)}\r\n");
                     foreach (var r in results.Where(x => x.UsableAsSni))
                     {
-                        ScannerLogTxt.AppendText($"[OK] {r.Domain} ({r.LatencyMs}ms)\r\n");
+                        ScannerLogTxt.AppendText($"[OK] {r.Domain} ({r.TlsMs}ms)\r\n");
                     }
                 });
             }
