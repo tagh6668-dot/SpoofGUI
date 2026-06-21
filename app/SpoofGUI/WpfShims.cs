@@ -60,8 +60,3 @@ public class DispatcherQueueSynchronizationContext : SynchronizationContext
         }
     }
 }
-
-namespace System.Runtime.CompilerServices
-{
-    public static class IsExternalInit { }
-}
