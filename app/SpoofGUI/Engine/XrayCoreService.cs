@@ -49,7 +49,7 @@ public sealed class XrayCoreService : IDisposable
     public async Task<string> VersionAsync()
     {
         var outText = await RunCaptureAsync(Paths.XrayExePath, ["version"]);
-        return outText.Split('\n', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim() ?? "xray ready";
+        return outText.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim() ?? "xray ready";
     }
 
     public async Task StartAsync(V2RayProfile profile)
@@ -62,7 +62,7 @@ public sealed class XrayCoreService : IDisposable
 
         var config = BuildProxyConfig(profile).ToJsonString(new JsonSerializerOptions { WriteIndented = true });
         Directory.CreateDirectory(Path.GetDirectoryName(Paths.XrayConfigPath)!);
-        await File.WriteAllTextAsync(Paths.XrayConfigPath, config);
+        File.WriteAllText(Paths.XrayConfigPath, config);
         AppLog.Info($"xray config written: socks 127.0.0.1:{SocksPort}, http 127.0.0.1:{HttpPort}");
 
         await RunCaptureAsync(Paths.XrayExePath, ["run", "-test", "-c", Paths.XrayConfigPath]);
@@ -352,7 +352,7 @@ public sealed class XrayCoreService : IDisposable
 
     private JsonObject BuildShadowsocksOutbound(V2RayProfile profile)
     {
-        var parts = profile.UserId.Split(':', 2);
+        var parts = profile.UserId.Split(new[] { ':' }, 2);
         var method = parts.Length == 2 ? parts[0] : "aes-128-gcm";
         var password = parts.Length == 2 ? parts[1] : profile.UserId;
         return new JsonObject
@@ -472,7 +472,7 @@ public sealed class XrayCoreService : IDisposable
         var fragmentStart = query.IndexOf('#');
         if (fragmentStart >= 0) query = query.Substring(0, fragmentStart);
 
-        foreach (var pair in query.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        foreach (var pair in query.Split(new[] { '&' }, StringSplitOptions.RemoveEmptyEntries))
         {
             var idx = pair.IndexOf('=');
             if (idx <= 0) continue;

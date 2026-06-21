@@ -85,9 +85,10 @@ public sealed class DiagnosticsService
     public IReadOnlyList<HealthCheckItem> HealthChecks()
     {
         var endpoint = $"http=127.0.0.1:{_ports.HttpPort};https=127.0.0.1:{_ports.HttpPort};socks=127.0.0.1:{_ports.SocksPort}";
+        var appExe = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
         var checks = new List<HealthCheckItem>
         {
-            Check(Environment.ProcessPath is not null, "app executable", Environment.ProcessPath ?? "unknown"),
+            Check(appExe is not null, "app executable", appExe ?? "unknown"),
             Check(IsWritable(Paths.AppDataDir), "app data writable", Paths.AppDataDir),
             Check(File.Exists(Paths.XrayExePath), "xray bundled", Paths.XrayExePath),
             Check(File.Exists(Paths.SingBoxExePath), "sing-box bundled", Paths.SingBoxExePath),

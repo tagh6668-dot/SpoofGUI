@@ -31,7 +31,7 @@ public sealed class EngineSupervisor : IDisposable
         _lastError = null;
         ProxyPortKiller.KillOwners(profile.ListenPort);
 
-        var exe = Environment.ProcessPath ?? AppContext.BaseDirectory;
+        var exe = Process.GetCurrentProcess().MainModule?.FileName ?? AppContext.BaseDirectory;
         EnsureFirewallRule(profile.ListenPort, exe);
 
         try
@@ -113,8 +113,8 @@ public sealed class EngineSupervisor : IDisposable
                 CreateNoWindow = true,
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
+                Arguments = string.Join(" ", args.Select(a => a.Contains(' ') ? $"\"{a}\"" : a))
             };
-            foreach (var a in args) psi.ArgumentList.Add(a);
             using var p = Process.Start(psi);
             if (p is null) return false;
             p.WaitForExit(5000);

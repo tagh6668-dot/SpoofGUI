@@ -372,7 +372,7 @@ public sealed class SingBoxTunnelService : IDisposable
             case "shadowsocks":
             case "ss":
                 outbound["type"] = "shadowsocks";
-                var parts = profile.UserId.Split(':', 2);
+                var parts = profile.UserId.Split(new[] { ':' }, 2);
                 outbound["method"] = parts.Length == 2 ? parts[0] : "aes-128-gcm";
                 outbound["password"] = parts.Length == 2 ? parts[1] : profile.UserId;
                 break;
@@ -443,7 +443,7 @@ public sealed class SingBoxTunnelService : IDisposable
         var query = rawUri.Substring(q + 1);
         var frag = query.IndexOf('#');
         if (frag >= 0) query = query.Substring(0, frag);
-        foreach (var pair in query.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        foreach (var pair in query.Split(new[] { '&' }, StringSplitOptions.RemoveEmptyEntries))
         {
             var idx = pair.IndexOf('=');
             if (idx <= 0) continue;

@@ -24,8 +24,8 @@ internal static class KillSwitch
                 CreateNoWindow = true,
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
+                Arguments = string.Join(" ", args.Select(a => a.Contains(' ') ? $"\"{a}\"" : a))
             };
-            foreach (var a in args) psi.ArgumentList.Add(a);
             using var p = Process.Start(psi);
             p?.WaitForExit(5000);
         }

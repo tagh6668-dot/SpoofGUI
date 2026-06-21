@@ -133,7 +133,7 @@ public static partial class V2RayConfigParser
     {
         if (string.IsNullOrWhiteSpace(uri.Host))
         {
-            var payload = raw["ss://".Length..].Split('#', 2)[0].Split('?', 2)[0];
+            var payload = raw.Substring("ss://".Length).Split(new[] { '#' }, 2)[0].Split(new[] { '?' }, 2)[0];
             var decoded = DecodeBase64Url(payload);
             if (Uri.TryCreate($"ss://{decoded}", UriKind.Absolute, out var decodedUri))
             {
@@ -159,9 +159,9 @@ public static partial class V2RayConfigParser
     private static Dictionary<string, string> ParseQuery(string query)
     {
         var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var pair in query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries))
+        foreach (var pair in query.TrimStart('?').Split(new[] { '&' }, StringSplitOptions.RemoveEmptyEntries))
         {
-            var parts = pair.Split('=', 2);
+            var parts = pair.Split(new[] { '=' }, 2);
             if (parts.Length == 2)
             {
                 result[WebUtility.UrlDecode(parts[0])] = WebUtility.UrlDecode(parts[1]);
