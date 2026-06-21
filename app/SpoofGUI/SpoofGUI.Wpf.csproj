@@ -23,8 +23,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Exclude all WinUI 3 specific items -->
-    <Compile Remove="GUI\**" />
+    <!-- Exclude only WinUI 3 specific GUI items and pages, keeping ViewModels -->
+    <Compile Remove="GUI\Pages\**" />
+    <Compile Remove="GUI\Interactions\**" />
+    <Compile Remove="GUI\Converters\**" />
+    <Compile Remove="GUI\ThemeService.cs" />
+    <Compile Remove="GUI\Shell.xaml.cs" />
     <Compile Remove="App.xaml.cs" />
     <Compile Remove="MainWindow.xaml.cs" />
     <Compile Remove="SplashWindow.xaml.cs" />
@@ -36,7 +40,8 @@
     <Page Remove="MainWindow.xaml" />
     <Page Remove="SplashWindow.xaml" />
     <Page Remove="TrayPanelWindow.xaml" />
-    <Page Remove="GUI\**\*.xaml" />
+    <Page Remove="GUI\Pages\**" />
+    <Page Remove="GUI\Shell.xaml" />
   </ItemGroup>
 
   <ItemGroup>
