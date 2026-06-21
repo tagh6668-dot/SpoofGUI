@@ -174,12 +174,8 @@ foreach ($a in $Arch) {
     Assert-Exists (Join-Path $engineDir "wintun.dll") "wintun.dll"
 
     if (Test-Path $publishDir) { Remove-Item -Recurse -Force $publishDir }
-    if ($a -eq "x86") {
-        & dotnet publish $appCsproj -c Release -p:Platform=$platform -r $rid -o $publishDir
-    } else {
-        & dotnet publish $appCsproj -c Release -p:Platform=$platform -r $rid --self-contained true `
-            -p:PublishSingleFile=false -p:PublishTrimmed=false -o $publishDir
-    }
+    & dotnet publish $appCsproj -c Release -p:Platform=$platform -r $rid --self-contained true `
+        -p:PublishSingleFile=false -p:PublishTrimmed=false -o $publishDir
     if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed for $a." }
 
     Assert-Exists (Join-Path $publishDir "SpoofGUI.exe") "published SpoofGUI.exe"
