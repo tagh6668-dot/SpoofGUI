@@ -223,7 +223,7 @@ public sealed class SettingsPageViewModel
             Directory.CreateDirectory(downloadDir);
             var target = Path.Combine(downloadDir, assetName);
             var bytes = await http.GetByteArrayAsync(url);
-            await File.WriteAllBytesAsync(target, bytes);
+            File.WriteAllBytes(target, bytes);
 
             Process.Start(new ProcessStartInfo { FileName = target, UseShellExecute = true });
             return "INSTALL_LAUNCHED";

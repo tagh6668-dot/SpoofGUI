@@ -125,7 +125,7 @@ public sealed class XrayCoreService : IDisposable
         var port = FreeLoopbackPort();
         var config = BuildPingConfig(profile, port).ToJsonString(new JsonSerializerOptions { WriteIndented = true });
         var configPath = Path.Combine(Path.GetTempPath(), $"spoofgui-ping-{port}.json");
-        await File.WriteAllTextAsync(configPath, config, ct);
+        File.WriteAllText(configPath, config);
 
         Process? proc = null;
         try
