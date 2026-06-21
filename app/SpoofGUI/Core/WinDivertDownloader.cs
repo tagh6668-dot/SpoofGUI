@@ -40,13 +40,21 @@ internal static class WinDivertDownloader
             var subDir = arch == "x86" ? "x86" : "x64";
             var sourceDir = Path.Combine(tempRoot, $"WinDivert-{Package}", subDir);
             var dll = Path.Combine(sourceDir, "WinDivert.dll");
-            var sys = Path.Combine(sourceDir, arch == "x86" ? "WinDivert32.sys" : "WinDivert64.sys");
 
-            if (!File.Exists(dll) || !File.Exists(sys))
-                throw new FileNotFoundException($"WinDivert files for {arch} not found in downloaded package.");
+            if (!File.Exists(dll))
+                throw new FileNotFoundException($"WinDivert DLL for {arch} not found in downloaded package.");
 
             File.Copy(dll, Path.Combine(engineDir, "WinDivert.dll"), overwrite: true);
-            File.Copy(sys, Path.Combine(engineDir, Path.GetFileName(sys)), overwrite: true);
+
+            // Copy both x86 and x64 driver files if they exist in the extracted package to support WOW64 seamlessly on 64-bit systems
+            var driver32Source = Path.Combine(tempRoot, $"WinDivert-{Package}", "x86", "WinDivert32.sys");
+            var driver64Source = Path.Combine(tempRoot, $"WinDivert-{Package}", "x64", "WinDivert64.sys");
+
+            if (File.Exists(driver32Source))
+                File.Copy(driver32Source, Path.Combine(engineDir, "WinDivert32.sys"), overwrite: true);
+            if (File.Exists(driver64Source))
+                File.Copy(driver64Source, Path.Combine(engineDir, "WinDivert64.sys"), overwrite: true);
+
             progress?.Report("WinDivert ready");
         }
         finally

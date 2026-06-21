@@ -60,7 +60,7 @@ internal static class WinDivert
 
     public static string EngineDirectory => Path.Combine(AppContext.BaseDirectory, "engine");
 
-    public static string RequiredDriverName => Environment.Is64BitProcess ? "WinDivert64.sys" : "WinDivert32.sys";
+    public static string RequiredDriverName => Environment.Is64BitOperatingSystem ? "WinDivert64.sys" : "WinDivert32.sys";
 
     public static bool IsAvailable() =>
         CandidatePaths().Any(File.Exists) && File.Exists(Path.Combine(EngineDirectory, RequiredDriverName));

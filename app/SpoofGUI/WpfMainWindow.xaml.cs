@@ -183,8 +183,47 @@ public partial class WpfMainWindow : Window, IMainPage
             : $"{t.Minutes:D2}:{t.Seconds:D2}";
     }
 
+    private async Task<bool> EnsureWinDivertAsync()
+    {
+        if (WinDivert.IsAvailable()) return true;
+
+        var result = MessageBox.Show(
+            "SpoofGUI needs WinDivert.dll and " + WinDivert.RequiredDriverName + ".\n" +
+            "The installer no longer bundles WinDivert because some antivirus tools flag installer temp extraction.\n\n" +
+            "Download official WinDivert now?",
+            "WinDivert Not Found",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (result != MessageBoxResult.Yes)
+        {
+            RenderError("WinDivert is required to start SNI spoofing.");
+            return false;
+        }
+
+        var arch = Environment.Is64BitProcess ? "amd64" : "x86";
+        var progress = new Progress<string>(message => DashHeadlineSub.Text = message);
+        try
+        {
+            DashStartBtn.IsEnabled = false;
+            DashHeadlineText.Text = "preparing";
+            await WinDivertDownloader.DownloadAsync(arch, progress);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            RenderError($"WinDivert download failed: {ex.Message}");
+            return false;
+        }
+        finally
+        {
+            DashStartBtn.IsEnabled = true;
+        }
+    }
+
     private async void DashStartBtn_Click(object sender, RoutedEventArgs e)
     {
+        if (!await EnsureWinDivertAsync()) return;
         RenderConnecting();
         await _mainVm.ConnectAsync();
     }
