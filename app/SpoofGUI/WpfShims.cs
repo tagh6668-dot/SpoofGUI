@@ -62,16 +62,3 @@ public class DispatcherQueueSynchronizationContext : SynchronizationContext
         }
     }
 }
-
-public static class CollectionExtensions
-{
-    public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue defaultValue = default!)
-    {
-        return dictionary.TryGetValue(key, out var value) ? value : defaultValue;
-    }
-
-    public static TValue GetValueOrDefault<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key, TValue defaultValue = default!) where TKey : notnull
-    {
-        return dictionary.TryGetValue(key, out var value) ? value : defaultValue;
-    }
-}

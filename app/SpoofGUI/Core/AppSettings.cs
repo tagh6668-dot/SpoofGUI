@@ -106,13 +106,13 @@ public sealed class AppSettings
         {
             var value = _settings.Get(ProxyChainKey);
             if (string.IsNullOrWhiteSpace(value)) return [];
-            return value.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            return value.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                 .Select(s => s.Trim())
                 .Select(s => long.TryParse(s, out var id) ? id : 0)
                 .Where(id => id > 0)
                 .ToList();
         }
-        set => _settings.Set(ProxyChainKey, string.Join(',', value));
+        set => _settings.Set(ProxyChainKey, string.Join(",", value));
     }
 
     private string ReadString(string key, string fallback)
