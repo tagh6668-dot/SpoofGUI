@@ -114,7 +114,8 @@ public partial class WpfMainWindow : Window, IMainPage
 
     private void SidebarMenu_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (SidebarMenu.SelectedItem is ListBoxItem item && item.Tag is string tagStr && int.TryParse(tagStr, out int idx))
+        if (MainContentTabs == null) return;
+        if (sender is ListBox listBox && listBox.SelectedItem is ListBoxItem item && item.Tag is string tagStr && int.TryParse(tagStr, out int idx))
         {
             MainContentTabs.SelectedIndex = idx;
         }
@@ -204,7 +205,10 @@ public partial class WpfMainWindow : Window, IMainPage
 
     private void ProfilesListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (ProfilesListBox.SelectedItem is SpoofProfile p)
+        if (ProfNameTxt == null || ProfListenHostTxt == null || ProfListenPortTxt == null || 
+            ProfConnectIpTxt == null || ProfConnectPortTxt == null || ProfFakeSniTxt == null) return;
+
+        if (sender is ListBox listBox && listBox.SelectedItem is SpoofProfile p)
         {
             ProfNameTxt.Text = p.Name;
             ProfListenHostTxt.Text = p.ListenHost;
@@ -316,7 +320,8 @@ public partial class WpfMainWindow : Window, IMainPage
 
     private void V2RayModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (V2RayModeComboBox.SelectedItem is ComboBoxItem item)
+        if (_v2rayVm == null) return;
+        if (sender is ComboBox comboBox && comboBox.SelectedItem is ComboBoxItem item)
         {
             string mode = item.Content.ToString() switch
             {
@@ -331,7 +336,8 @@ public partial class WpfMainWindow : Window, IMainPage
 
     private void SubscriptionsListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (SubscriptionsListBox.SelectedItem is Subscription sub)
+        if (SubNameTxt == null || SubUrlTxt == null) return;
+        if (sender is ListBox listBox && listBox.SelectedItem is Subscription sub)
         {
             SubNameTxt.Text = sub.Name;
             SubUrlTxt.Text = sub.Url;
