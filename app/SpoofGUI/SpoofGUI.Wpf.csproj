@@ -24,6 +24,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Exclude all WinUI 3 specific items from GUI and root folder -->
     <Compile Remove="GUI\**" />
     <Page Remove="GUI\**" />
