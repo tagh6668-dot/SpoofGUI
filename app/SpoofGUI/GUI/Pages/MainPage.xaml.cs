@@ -7,7 +7,7 @@ using SpoofGUI.GUI.ViewModels;
 
 namespace SpoofGUI.GUI.Pages;
 
-public sealed partial class MainPage : Page
+public sealed partial class MainPage : Page, IMainPage
 {
     private readonly MainPageViewModel _vm;
 

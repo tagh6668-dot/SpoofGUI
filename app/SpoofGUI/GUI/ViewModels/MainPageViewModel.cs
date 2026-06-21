@@ -22,7 +22,7 @@ public sealed class MainPageViewModel
     private readonly AppSettings _appSettings;
     private readonly ILogger<MainPageViewModel> _log;
 
-    private MainPage? _page;
+    private IMainPage? _page;
     private DispatcherQueue? _dispatcher;
     private string _iface = "—";
     private Action<string, JsonElement>? _handler;
@@ -39,7 +39,7 @@ public sealed class MainPageViewModel
         _log = log;
     }
 
-    public async Task LoadAsync(MainPage page)
+    public async Task LoadAsync(IMainPage page)
     {
         _page = page;
         _dispatcher = DispatcherQueue.GetForCurrentThread();

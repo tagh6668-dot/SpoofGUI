@@ -152,6 +152,8 @@ New-Item -ItemType Directory -Force -Path $stageRoot | Out-Null
 
 foreach ($a in $Arch) {
     Write-Host "=== Building SpoofGUI $Version ($a) ==="
+    $csprojName = if ($a -eq "x86") { "SpoofGUI.Wpf.csproj" } else { "SpoofGUI.csproj" }
+    $appCsproj = Join-Path $root "app\SpoofGUI\$csprojName"
     $rid = if ($a -eq "x86") { "win-x86" } else { "win-x64" }
     $platform = if ($a -eq "x86") { "x86" } else { "x64" }
     $publishDir = Join-Path $distDir "publish-$a"

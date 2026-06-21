@@ -1,6 +1,10 @@
 name: Build and Release
 
 on:
+  push:
+    branches:
+      - main
+      - master
   workflow_dispatch:
     inputs:
       create_release:

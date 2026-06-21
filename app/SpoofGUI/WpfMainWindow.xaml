@@ -1,0 +1,500 @@
+<Window
+    x:Class="SpoofGUI.WpfMainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="SpoofGUI (WPF Edition)"
+    Width="1280" Height="820"
+    WindowStartupLocation="CenterScreen"
+    Background="{StaticResource BackgroundBrush}">
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Sidebar Navigation -->
+        <Border Grid.Column="0" Background="{StaticResource SurfaceSunkenBrush}" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="0,0,1,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Sidebar Logo / Title -->
+                <StackPanel Grid.Row="0" Margin="20,24,20,20">
+                    <TextBlock Text="SpoofGUI" FontSize="22" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" />
+                    <TextBlock Text="WPF Compatibility Edition" FontSize="11" Foreground="{StaticResource TextTertiaryBrush}" Margin="0,2,0,0"/>
+                </StackPanel>
+
+                <!-- Navigation ListBox acting as Tab switcher -->
+                <ListBox Grid.Row="1" x:Name="SidebarMenu" Background="Transparent" BorderThickness="0" Margin="8,0" SelectionChanged="SidebarMenu_SelectionChanged">
+                    <ListBoxItem Tag="0" IsSelected="True">
+                        <StackPanel Orientation="Horizontal" Margin="6,2">
+                            <TextBlock Text="🏠 Dashboard" FontSize="14" FontWeight="SemiBold" />
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem Tag="1">
+                        <StackPanel Orientation="Horizontal" Margin="6,2">
+                            <TextBlock Text="⚙️ Profiles" FontSize="14" FontWeight="SemiBold" />
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem Tag="2">
+                        <StackPanel Orientation="Horizontal" Margin="6,2">
+                            <TextBlock Text="🌐 V2Ray / Core" FontSize="14" FontWeight="SemiBold" />
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem Tag="3">
+                        <StackPanel Orientation="Horizontal" Margin="6,2">
+                            <TextBlock Text="🔀 Routing" FontSize="14" FontWeight="SemiBold" />
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem Tag="4">
+                        <StackPanel Orientation="Horizontal" Margin="6,2">
+                            <TextBlock Text="🔍 SNI Scanner" FontSize="14" FontWeight="SemiBold" />
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem Tag="5">
+                        <StackPanel Orientation="Horizontal" Margin="6,2">
+                            <TextBlock Text="🔗 Connections" FontSize="14" FontWeight="SemiBold" />
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem Tag="6">
+                        <StackPanel Orientation="Horizontal" Margin="6,2">
+                            <TextBlock Text="🛠️ Settings" FontSize="14" FontWeight="SemiBold" />
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem Tag="7">
+                        <StackPanel Orientation="Horizontal" Margin="6,2">
+                            <TextBlock Text="📝 Real-time Logs" FontSize="14" FontWeight="SemiBold" />
+                        </StackPanel>
+                    </ListBoxItem>
+                </ListBox>
+
+                <!-- Footer Info -->
+                <StackPanel Grid.Row="2" Margin="20" Spacing="4">
+                    <TextBlock Text="Status: Connected" x:Name="FooterStatus" FontSize="12" Foreground="{StaticResource SuccessBrush}" FontWeight="SemiBold" />
+                    <TextBlock Text="Version: 1.0.5" FontSize="11" Foreground="{StaticResource TextTertiaryBrush}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Content (TabControl with Hidden Headers) -->
+        <TabControl Grid.Column="1" x:Name="MainContentTabs" BorderThickness="0" Background="Transparent" Padding="0">
+            <TabControl.Template>
+                <ControlTemplate TargetType="TabControl">
+                    <ContentPresenter ContentSource="SelectedContent" />
+                </ControlTemplate>
+            </TabControl.Template>
+
+            <!-- 1. DASHBOARD TAB -->
+            <TabItem>
+                <Grid Margin="32">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Margin="0,0,0,24">
+                        <TextBlock Text="idle" x:Name="DashHeadlineText" FontSize="28" FontWeight="Bold" />
+                        <TextBlock Text="Connect and use your X-Ray Client." x:Name="DashHeadlineSub" FontSize="14" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,4,0,0"/>
+                    </StackPanel>
+
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Left: Active Profile Card -->
+                        <Border Grid.Column="0" Background="{StaticResource SurfaceCardBrush}" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="6" Margin="0,0,12,0" Padding="20">
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="ACTIVE SPOOF PROFILE" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextTertiaryBrush}" />
+                                <TextBlock Text="default" x:Name="DashProfileName" FontSize="20" FontWeight="SemiBold" Margin="0,4,0,0"/>
+                                <TextBlock Text="0.0.0.0:40443  →  104.19.229.21:443" x:Name="DashProfileFlow" FontFamily="Consolas" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBlock Text="SNI: www.hcaptcha.com" x:Name="DashProfileSni" FontFamily="Consolas" Foreground="{StaticResource TextTertiaryBrush}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Right: V2Ray Status Card -->
+                        <Border Grid.Column="1" Background="{StaticResource SurfaceCardBrush}" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="6" Margin="12,0,0,0" Padding="20">
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="V2RAY STATUS" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextTertiaryBrush}" />
+                                <TextBlock Text="idle" x:Name="DashV2RayStatus" FontSize="20" FontWeight="SemiBold" Margin="0,4,0,0"/>
+                                <TextBlock Text="mode: Proxy" x:Name="DashV2RayMode" FontFamily="Consolas" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBlock Text="socks 127.0.0.1:10808 · http 127.0.0.1:10809" x:Name="DashV2RayPorts" FontFamily="Consolas" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBlock Text="" x:Name="DashV2RayError" Foreground="{StaticResource DangerBrush}" FontSize="12" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <!-- Statistics Grid -->
+                    <Border Grid.Row="2" Background="{StaticResource SurfaceCardBrush}" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="6" Margin="0,24,0,0" Padding="20" VerticalAlignment="Top">
+                        <StackPanel Spacing="16">
+                            <TextBlock Text="MONITOR &amp; STATISTICS" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextTertiaryBrush}" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Uptime" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                    <TextBlock Text="—" x:Name="DashStatUptime" FontSize="22" FontWeight="SemiBold" FontFamily="Consolas" Margin="0,4,0,0" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Connections" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                    <TextBlock Text="—" x:Name="DashStatConns" FontSize="22" FontWeight="SemiBold" FontFamily="Consolas" Margin="0,4,0,0" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Outbound Interface" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                    <TextBlock Text="—" x:Name="DashStatIface" FontSize="22" FontWeight="SemiBold" FontFamily="Consolas" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Control Buttons -->
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,24,0,0" Spacing="12">
+                        <Button Text="Stop Spoofing" x:Name="DashStopBtn" Style="{StaticResource DangerButtonStyle}" Width="160" Height="40" FontSize="14" Click="DashStopBtn_Click" IsEnabled="False" />
+                        <Button Text="Start Spoofing" x:Name="DashStartBtn" Width="160" Height="40" FontSize="14" Click="DashStartBtn_Click" />
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <!-- 2. PROFILES TAB -->
+            <TabItem>
+                <Grid Margin="32">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="280" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: Profiles List -->
+                    <Grid Grid.Column="0" Margin="0,0,16,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="Profiles" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,12"/>
+                        <ListBox Grid.Row="1" x:Name="ProfilesListBox" SelectionChanged="ProfilesListBox_SelectionChanged" />
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,12,0,0" Spacing="8">
+                            <Button Content="New Profile" x:Name="ProfNewBtn" Click="ProfNewBtn_Click" Width="136" />
+                            <Button Content="Set Active" x:Name="ProfActiveBtn" Click="ProfActiveBtn_Click" Width="136" Style="{StaticResource SecondaryButtonStyle}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Right: Selected Profile Details -->
+                    <Border Grid.Column="1" Background="{StaticResource SurfaceCardBrush}" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="6" Padding="24">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Text="Edit Spoof Profile" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,16" />
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                <StackPanel Spacing="14">
+                                    <StackPanel>
+                                        <TextBlock Text="Profile Name" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6"/>
+                                        <TextBox x:Name="ProfNameTxt" />
+                                    </StackPanel>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="100" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                            <TextBlock Text="Listen Host" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6"/>
+                                            <TextBox x:Name="ProfListenHostTxt" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock Text="Listen Port" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6"/>
+                                            <TextBox x:Name="ProfListenPortTxt" />
+                                        </StackPanel>
+                                    </Grid>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="100" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                            <TextBlock Text="Connect Target IP / Domain" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6"/>
+                                            <TextBox x:Name="ProfConnectIpTxt" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock Text="Connect Port" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6"/>
+                                            <TextBox x:Name="ProfConnectPortTxt" />
+                                        </StackPanel>
+                                    </Grid>
+                                    <StackPanel>
+                                        <TextBlock Text="Fake SNI" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6"/>
+                                        <TextBox x:Name="ProfFakeSniTxt" />
+                                    </StackPanel>
+                                    <Button Content="Import Default SNIs" x:Name="ProfImportDefaultBtn" Style="{StaticResource SecondaryButtonStyle}" Click="ProfImportDefaultBtn_Click" Margin="0,12,0,0"/>
+                                </StackPanel>
+                            </ScrollViewer>
+                            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0" Spacing="12">
+                                <Button Content="Delete" x:Name="ProfDeleteBtn" Style="{StaticResource DangerButtonStyle}" Width="100" Click="ProfDeleteBtn_Click" />
+                                <Button Content="Save Profile" x:Name="ProfSaveBtn" Width="120" Click="ProfSaveBtn_Click" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- 3. V2RAY TAB -->
+            <TabItem>
+                <Grid Margin="32">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="320" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: Subscriptions and Modes -->
+                    <Grid Grid.Column="0" Margin="0,0,16,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+                            <TextBlock Text="V2Ray Mode" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,6" />
+                            <ComboBox x:Name="V2RayModeComboBox" SelectionChanged="V2RayModeComboBox_SelectionChanged">
+                                <ComboBoxItem Content="Direct (No V2Ray Core)" />
+                                <ComboBoxItem Content="Tunnel (Route all traffic)" />
+                                <ComboBoxItem Content="System Proxy (Set IE Proxy Settings)" />
+                            </ComboBox>
+                        </StackPanel>
+                        <TextBlock Grid.Row="1" Text="Subscriptions" FontSize="16" FontWeight="SemiBold" Margin="0,8,0,8" />
+                        <Grid Grid.Row="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <ListBox Grid.Row="0" x:Name="SubscriptionsListBox" SelectionChanged="SubscriptionsListBox_SelectionChanged" />
+                            <StackPanel Grid.Row="1" Margin="0,12,0,0" Spacing="8">
+                                <TextBox x:Name="SubNameTxt" Tag="Sub Name" />
+                                <TextBox x:Name="SubUrlTxt" Tag="Sub URL" />
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Button Grid.Column="0" Content="Add Sub" x:Name="SubAddBtn" Click="SubAddBtn_Click" Margin="0,0,4,0"/>
+                                    <Button Grid.Column="1" Content="Update All" x:Name="SubUpdateAllBtn" Style="{StaticResource SecondaryButtonStyle}" Click="SubUpdateAllBtn_Click" Margin="4,0,0,0"/>
+                                </Grid>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Button Grid.Column="0" Content="Update Selected" x:Name="SubUpdateSelBtn" Style="{StaticResource SecondaryButtonStyle}" Click="SubUpdateSelBtn_Click" Margin="0,0,4,0"/>
+                                    <Button Grid.Column="1" Content="Delete" x:Name="SubDeleteBtn" Style="{StaticResource DangerButtonStyle}" Click="SubDeleteBtn_Click" Margin="4,0,0,0"/>
+                                </Grid>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+
+                    <!-- Right: Profiles List & Manual Import -->
+                    <Border Grid.Column="1" Background="{StaticResource SurfaceCardBrush}" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="6" Padding="24">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Text="V2Ray Config Profiles" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,16"/>
+                            <ListBox Grid.Row="1" x:Name="V2RayProfilesListBox" />
+                            <Grid Grid.Row="2" Margin="0,16,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" x:Name="V2RayImportTxt" Margin="0,0,12,0" VerticalContentAlignment="Center" />
+                                <Button Grid.Column="1" Content="Import Config" x:Name="V2RayImportBtn" Click="V2RayImportBtn_Click" Width="120" />
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- 4. ROUTING TAB -->
+            <TabItem>
+                <Grid Margin="32">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    
+                    <TextBlock Grid.Row="0" Text="Routing Rules" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,16"/>
+                    <ListBox Grid.Row="1" x:Name="RoutingRulesListBox" />
+                    <Border Grid.Row="2" Margin="0,16,0,0" Padding="16" Background="{StaticResource SurfaceCardBrush}" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="6">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="150" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="150" />
+                                <ColumnDefinition Width="140" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                <TextBlock Text="Rule Type" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                                <ComboBox x:Name="RuleTypeComboBox" SelectedIndex="0">
+                                    <ComboBoxItem Content="domain" />
+                                    <ComboBoxItem Content="ip" />
+                                </ComboBox>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="0,0,12,0">
+                                <TextBlock Text="Value (e.g. domain:google.com, 8.8.8.8)" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                                <TextBox x:Name="RuleValueTxt" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Margin="0,0,12,0">
+                                <TextBlock Text="Action" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                                <ComboBox x:Name="RuleActionComboBox" SelectedIndex="0">
+                                    <ComboBoxItem Content="proxy" />
+                                    <ComboBoxItem Content="direct" />
+                                    <ComboBoxItem Content="block" />
+                                </ComboBox>
+                            </StackPanel>
+                            <StackPanel Grid.Column="3" VerticalAlignment="Bottom">
+                                <Button Content="Add Rule" x:Name="RuleAddBtn" Click="RuleAddBtn_Click" Height="34" HorizontalAlignment="Stretch" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- 5. SNI SCANNER TAB -->
+            <TabItem>
+                <Grid Margin="32">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="320" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: Scanner Settings -->
+                    <Border Grid.Column="0" Background="{StaticResource SurfaceCardBrush}" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="6" Padding="20" Margin="0,0,16,0">
+                        <StackPanel Spacing="14">
+                            <TextBlock Text="SNI SCANNER SETTINGS" FontSize="12" FontWeight="Bold" Foreground="{StaticResource TextTertiaryBrush}"/>
+                            <StackPanel>
+                                <TextBlock Text="Target Host" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                                <TextBox x:Name="ScannerTargetHostTxt" Text="www.hcaptcha.com" />
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="Target Port" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                                <TextBox x:Name="ScannerTargetPortTxt" Text="443" />
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="Threads" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                                <TextBox x:Name="ScannerThreadsTxt" Text="50" />
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="Timeout (ms)" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                                <TextBox x:Name="ScannerTimeoutTxt" Text="1500" />
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="Local DNS Server" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                                <TextBox x:Name="ScannerDnsTxt" Text="127.0.0.1:53" />
+                            </StackPanel>
+                            <Grid Margin="0,12,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Content="Stop Scan" x:Name="ScannerStopBtn" Style="{StaticResource DangerButtonStyle}" IsEnabled="False" Click="ScannerStopBtn_Click" Margin="0,0,6,0"/>
+                                <Button Grid.Column="1" Content="Start Scan" x:Name="ScannerStartBtn" Click="ScannerStartBtn_Click" Margin="6,0,0,0"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Right: Scanner Progress and Results -->
+                    <Border Grid.Column="1" Background="{StaticResource SurfaceCardBrush}" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="6" Padding="24">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Text="Scan Output &amp; Results" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,8" />
+                            <ProgressBar Grid.Row="1" x:Name="ScannerProgressBar" Height="6" Background="{StaticResource SurfaceSunkenBrush}" Foreground="{StaticResource AccentBrush}" BorderThickness="0" Margin="0,0,0,16"/>
+                            <TextBox Grid.Row="2" x:Name="ScannerLogTxt" IsReadOnly="True" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="12" Background="{StaticResource SurfaceSunkenBrush}" BorderThickness="0"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- 6. CONNECTIONS TAB -->
+            <TabItem>
+                <Grid Margin="32">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    
+                    <TextBlock Grid.Row="0" Text="Active Connections Monitor" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,16"/>
+                    <ListBox Grid.Row="1" x:Name="ConnectionsListBox" FontFamily="Consolas" FontSize="12" />
+                    <Button Grid.Row="2" Content="Refresh Connections" x:Name="ConnRefreshBtn" Click="ConnRefreshBtn_Click" Width="180" HorizontalAlignment="Right" Margin="0,16,0,0" />
+                </Grid>
+            </TabItem>
+
+            <!-- 7. SETTINGS TAB -->
+            <TabItem>
+                <Grid Margin="32">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="Application Settings" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,24" />
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <StackPanel Spacing="16" MaxWidth="600" HorizontalAlignment="Left">
+                            <StackPanel>
+                                <TextBlock Text="Local SOCKS Port" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6"/>
+                                <TextBox x:Name="SettingsSocksPortTxt" />
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="Local HTTP Port" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6"/>
+                                <TextBox x:Name="SettingsHttpPortTxt" />
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="WinDivert Local Port" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6"/>
+                                <TextBox x:Name="SettingsDivertPortTxt" />
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="Fallback DNS Servers" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6"/>
+                                <TextBox x:Name="SettingsDnsTxt" />
+                            </StackPanel>
+                            <CheckBox x:Name="SettingsCheckUpdatesCb" Content="Check for updates on launch" Foreground="{StaticResource TextPrimaryBrush}" FontSize="13" VerticalContentAlignment="Center" />
+                        </StackPanel>
+                    </ScrollViewer>
+                    <Button Grid.Row="2" Content="Save Settings" x:Name="SettingsSaveBtn" Click="SettingsSaveBtn_Click" Width="140" HorizontalAlignment="Right" Margin="0,16,0,0" />
+                </Grid>
+            </TabItem>
+
+            <!-- 8. REAL-TIME LOGS TAB -->
+            <TabItem>
+                <Grid Margin="32">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    
+                    <TextBlock Grid.Row="0" Text="Application Logs" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,16"/>
+                    <TextBox Grid.Row="1" x:Name="LogsOutputTxt" IsReadOnly="True" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="12" Background="{StaticResource SurfaceSunkenBrush}" BorderThickness="0"/>
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0" Spacing="12">
+                        <Button Content="Clear Logs" x:Name="LogsClearBtn" Style="{StaticResource SecondaryButtonStyle}" Click="LogsClearBtn_Click" Width="120" />
+                        <Button Content="Export Logs" x:Name="LogsExportBtn" Click="LogsExportBtn_Click" Width="120" />
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>
