@@ -73,8 +73,8 @@
                 </ListBox>
 
                 <!-- Footer Info -->
-                <StackPanel Grid.Row="2" Margin="20" Spacing="4">
-                    <TextBlock Text="Status: Connected" x:Name="FooterStatus" FontSize="12" Foreground="{StaticResource SuccessBrush}" FontWeight="SemiBold" />
+                <StackPanel Grid.Row="2" Margin="20">
+                    <TextBlock Text="Status: Connected" x:Name="FooterStatus" FontSize="12" Foreground="{StaticResource SuccessBrush}" FontWeight="SemiBold" Margin="0,0,0,4" />
                     <TextBlock Text="Version: 1.0.5" FontSize="11" Foreground="{StaticResource TextTertiaryBrush}" />
                 </StackPanel>
             </Grid>
@@ -111,19 +111,19 @@
 
                         <!-- Left: Active Profile Card -->
                         <Border Grid.Column="0" Background="{StaticResource SurfaceCardBrush}" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="6" Margin="0,0,12,0" Padding="20">
-                            <StackPanel Spacing="6">
+                            <StackPanel>
                                 <TextBlock Text="ACTIVE SPOOF PROFILE" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextTertiaryBrush}" />
-                                <TextBlock Text="default" x:Name="DashProfileName" FontSize="20" FontWeight="SemiBold" Margin="0,4,0,0"/>
-                                <TextBlock Text="0.0.0.0:40443  →  104.19.229.21:443" x:Name="DashProfileFlow" FontFamily="Consolas" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBlock Text="default" x:Name="DashProfileName" FontSize="20" FontWeight="SemiBold" Margin="0,6,0,6"/>
+                                <TextBlock Text="0.0.0.0:40443  →  104.19.229.21:443" x:Name="DashProfileFlow" FontFamily="Consolas" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
                                 <TextBlock Text="SNI: www.hcaptcha.com" x:Name="DashProfileSni" FontFamily="Consolas" Foreground="{StaticResource TextTertiaryBrush}"/>
                             </StackPanel>
                         </Border>
 
                         <!-- Right: V2Ray Status Card -->
                         <Border Grid.Column="1" Background="{StaticResource SurfaceCardBrush}" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="6" Margin="12,0,0,0" Padding="20">
-                            <StackPanel Spacing="6">
+                            <StackPanel>
                                 <TextBlock Text="V2RAY STATUS" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextTertiaryBrush}" />
-                                <TextBlock Text="idle" x:Name="DashV2RayStatus" FontSize="20" FontWeight="SemiBold" Margin="0,4,0,0"/>
+                                <TextBlock Text="idle" x:Name="DashV2RayStatus" FontSize="20" FontWeight="SemiBold" Margin="0,6,0,6"/>
                                 <TextBlock Text="mode: Proxy" x:Name="DashV2RayMode" FontFamily="Consolas" Foreground="{StaticResource TextSecondaryBrush}"/>
                                 <TextBlock Text="socks 127.0.0.1:10808 · http 127.0.0.1:10809" x:Name="DashV2RayPorts" FontFamily="Consolas" Foreground="{StaticResource TextSecondaryBrush}"/>
                                 <TextBlock Text="" x:Name="DashV2RayError" Foreground="{StaticResource DangerBrush}" FontSize="12" TextWrapping="Wrap" />
@@ -133,8 +133,8 @@
 
                     <!-- Statistics Grid -->
                     <Border Grid.Row="2" Background="{StaticResource SurfaceCardBrush}" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="6" Margin="0,24,0,0" Padding="20" VerticalAlignment="Top">
-                        <StackPanel Spacing="16">
-                            <TextBlock Text="MONITOR &amp; STATISTICS" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextTertiaryBrush}" />
+                        <StackPanel>
+                            <TextBlock Text="MONITOR &amp; STATISTICS" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextTertiaryBrush}" Margin="0,0,0,16" />
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
@@ -158,9 +158,9 @@
                     </Border>
 
                     <!-- Control Buttons -->
-                    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,24,0,0" Spacing="12">
-                        <Button Text="Stop Spoofing" x:Name="DashStopBtn" Style="{StaticResource DangerButtonStyle}" Width="160" Height="40" FontSize="14" Click="DashStopBtn_Click" IsEnabled="False" />
-                        <Button Text="Start Spoofing" x:Name="DashStartBtn" Width="160" Height="40" FontSize="14" Click="DashStartBtn_Click" />
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,24,0,0">
+                        <Button Content="Stop Spoofing" x:Name="DashStopBtn" Style="{StaticResource DangerButtonStyle}" Width="160" Height="40" FontSize="14" Click="DashStopBtn_Click" IsEnabled="False" Margin="0,0,12,0" />
+                        <Button Content="Start Spoofing" x:Name="DashStartBtn" Width="160" Height="40" FontSize="14" Click="DashStartBtn_Click" />
                     </StackPanel>
                 </Grid>
             </TabItem>
@@ -182,8 +182,8 @@
                         </Grid.RowDefinitions>
                         <TextBlock Grid.Row="0" Text="Profiles" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,12"/>
                         <ListBox Grid.Row="1" x:Name="ProfilesListBox" SelectionChanged="ProfilesListBox_SelectionChanged" />
-                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,12,0,0" Spacing="8">
-                            <Button Content="New Profile" x:Name="ProfNewBtn" Click="ProfNewBtn_Click" Width="136" />
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,12,0,0">
+                            <Button Content="New Profile" x:Name="ProfNewBtn" Click="ProfNewBtn_Click" Width="136" Margin="0,0,8,0" />
                             <Button Content="Set Active" x:Name="ProfActiveBtn" Click="ProfActiveBtn_Click" Width="136" Style="{StaticResource SecondaryButtonStyle}" />
                         </StackPanel>
                     </Grid>
@@ -198,12 +198,12 @@
                             </Grid.RowDefinitions>
                             <TextBlock Grid.Row="0" Text="Edit Spoof Profile" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,16" />
                             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                                <StackPanel Spacing="14">
-                                    <StackPanel>
+                                <StackPanel>
+                                    <StackPanel Margin="0,0,0,14">
                                         <TextBlock Text="Profile Name" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6"/>
                                         <TextBox x:Name="ProfNameTxt" />
                                     </StackPanel>
-                                    <Grid>
+                                    <Grid Margin="0,0,0,14">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="100" />
@@ -217,7 +217,7 @@
                                             <TextBox x:Name="ProfListenPortTxt" />
                                         </StackPanel>
                                     </Grid>
-                                    <Grid>
+                                    <Grid Margin="0,0,0,14">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="100" />
@@ -231,15 +231,15 @@
                                             <TextBox x:Name="ProfConnectPortTxt" />
                                         </StackPanel>
                                     </Grid>
-                                    <StackPanel>
+                                    <StackPanel Margin="0,0,0,14">
                                         <TextBlock Text="Fake SNI" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6"/>
                                         <TextBox x:Name="ProfFakeSniTxt" />
                                     </StackPanel>
                                     <Button Content="Import Default SNIs" x:Name="ProfImportDefaultBtn" Style="{StaticResource SecondaryButtonStyle}" Click="ProfImportDefaultBtn_Click" Margin="0,12,0,0"/>
                                 </StackPanel>
                             </ScrollViewer>
-                            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0" Spacing="12">
-                                <Button Content="Delete" x:Name="ProfDeleteBtn" Style="{StaticResource DangerButtonStyle}" Width="100" Click="ProfDeleteBtn_Click" />
+                            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+                                <Button Content="Delete" x:Name="ProfDeleteBtn" Style="{StaticResource DangerButtonStyle}" Width="100" Click="ProfDeleteBtn_Click" Margin="0,0,12,0" />
                                 <Button Content="Save Profile" x:Name="ProfSaveBtn" Width="120" Click="ProfSaveBtn_Click" />
                             </StackPanel>
                         </Grid>
@@ -277,10 +277,10 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <ListBox Grid.Row="0" x:Name="SubscriptionsListBox" SelectionChanged="SubscriptionsListBox_SelectionChanged" />
-                            <StackPanel Grid.Row="1" Margin="0,12,0,0" Spacing="8">
-                                <TextBox x:Name="SubNameTxt" Tag="Sub Name" />
-                                <TextBox x:Name="SubUrlTxt" Tag="Sub URL" />
-                                <Grid>
+                            <StackPanel Grid.Row="1" Margin="0,12,0,0">
+                                <TextBox x:Name="SubNameTxt" Tag="Sub Name" Margin="0,0,0,8"/>
+                                <TextBox x:Name="SubUrlTxt" Tag="Sub URL" Margin="0,0,0,8"/>
+                                <Grid Margin="0,0,0,8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="*" />
@@ -379,25 +379,25 @@
 
                     <!-- Left: Scanner Settings -->
                     <Border Grid.Column="0" Background="{StaticResource SurfaceCardBrush}" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="6" Padding="20" Margin="0,0,16,0">
-                        <StackPanel Spacing="14">
-                            <TextBlock Text="SNI SCANNER SETTINGS" FontSize="12" FontWeight="Bold" Foreground="{StaticResource TextTertiaryBrush}"/>
-                            <StackPanel>
+                        <StackPanel>
+                            <TextBlock Text="SNI SCANNER SETTINGS" FontSize="12" FontWeight="Bold" Foreground="{StaticResource TextTertiaryBrush}" Margin="0,0,0,14"/>
+                            <StackPanel Margin="0,0,0,14">
                                 <TextBlock Text="Target Host" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
                                 <TextBox x:Name="ScannerTargetHostTxt" Text="www.hcaptcha.com" />
                             </StackPanel>
-                            <StackPanel>
+                            <StackPanel Margin="0,0,0,14">
                                 <TextBlock Text="Target Port" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
                                 <TextBox x:Name="ScannerTargetPortTxt" Text="443" />
                             </StackPanel>
-                            <StackPanel>
+                            <StackPanel Margin="0,0,0,14">
                                 <TextBlock Text="Threads" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
                                 <TextBox x:Name="ScannerThreadsTxt" Text="50" />
                             </StackPanel>
-                            <StackPanel>
+                            <StackPanel Margin="0,0,0,14">
                                 <TextBlock Text="Timeout (ms)" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
                                 <TextBox x:Name="ScannerTimeoutTxt" Text="1500" />
                             </StackPanel>
-                            <StackPanel>
+                            <StackPanel Margin="0,0,0,14">
                                 <TextBlock Text="Local DNS Server" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
                                 <TextBox x:Name="ScannerDnsTxt" Text="127.0.0.1:53" />
                             </StackPanel>
@@ -454,20 +454,20 @@
 
                     <TextBlock Grid.Row="0" Text="Application Settings" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,24" />
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                        <StackPanel Spacing="16" MaxWidth="600" HorizontalAlignment="Left">
-                            <StackPanel>
+                        <StackPanel MaxWidth="600" HorizontalAlignment="Left">
+                            <StackPanel Margin="0,0,0,16">
                                 <TextBlock Text="Local SOCKS Port" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6"/>
                                 <TextBox x:Name="SettingsSocksPortTxt" />
                             </StackPanel>
-                            <StackPanel>
+                            <StackPanel Margin="0,0,0,16">
                                 <TextBlock Text="Local HTTP Port" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6"/>
                                 <TextBox x:Name="SettingsHttpPortTxt" />
                             </StackPanel>
-                            <StackPanel>
+                            <StackPanel Margin="0,0,0,16">
                                 <TextBlock Text="WinDivert Local Port" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6"/>
                                 <TextBox x:Name="SettingsDivertPortTxt" />
                             </StackPanel>
-                            <StackPanel>
+                            <StackPanel Margin="0,0,0,16">
                                 <TextBlock Text="Fallback DNS Servers" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6"/>
                                 <TextBox x:Name="SettingsDnsTxt" />
                             </StackPanel>
@@ -489,8 +489,8 @@
                     
                     <TextBlock Grid.Row="0" Text="Application Logs" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,16"/>
                     <TextBox Grid.Row="1" x:Name="LogsOutputTxt" IsReadOnly="True" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="12" Background="{StaticResource SurfaceSunkenBrush}" BorderThickness="0"/>
-                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0" Spacing="12">
-                        <Button Content="Clear Logs" x:Name="LogsClearBtn" Style="{StaticResource SecondaryButtonStyle}" Click="LogsClearBtn_Click" Width="120" />
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+                        <Button Content="Clear Logs" x:Name="LogsClearBtn" Style="{StaticResource SecondaryButtonStyle}" Click="LogsClearBtn_Click" Width="120" Margin="0,0,12,0" />
                         <Button Content="Export Logs" x:Name="LogsExportBtn" Click="LogsExportBtn_Click" Width="120" />
                     </StackPanel>
                 </Grid>

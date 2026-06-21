@@ -31,11 +31,16 @@
     <Compile Remove="TrayPanelWindow.xaml.cs" />
     <Compile Remove="Program.cs" />
 
+    <ApplicationDefinition Remove="App.xaml" />
     <Page Remove="App.xaml" />
     <Page Remove="MainWindow.xaml" />
     <Page Remove="SplashWindow.xaml" />
     <Page Remove="TrayPanelWindow.xaml" />
     <Page Remove="GUI\**\*.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ApplicationDefinition Include="WpfApp.xaml" />
   </ItemGroup>
 
   <ItemGroup>
