@@ -96,13 +96,13 @@ public sealed class SniScannerService
             if (line.Length == 0 || line.StartsWith('#')) continue;
 
             var scheme = line.IndexOf("://", StringComparison.Ordinal);
-            if (scheme >= 0) line = line[(scheme + 3)..];
+            if (scheme >= 0) line = line.Substring(scheme + 3);
 
             var slash = line.IndexOf('/');
-            if (slash >= 0) line = line[..slash];
+            if (slash >= 0) line = line.Substring(0, slash);
 
             var colon = line.IndexOf(':');
-            if (colon >= 0) line = line[..colon];
+            if (colon >= 0) line = line.Substring(0, colon);
 
             line = line.Trim();
             if (line.Length == 0) continue;

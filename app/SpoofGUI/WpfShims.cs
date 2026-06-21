@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Threading;
 using System.Windows;
 
@@ -58,5 +60,18 @@ public class DispatcherQueueSynchronizationContext : SynchronizationContext
         {
             d(state);
         }
+    }
+}
+
+public static class CollectionExtensions
+{
+    public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue defaultValue = default!)
+    {
+        return dictionary.TryGetValue(key, out var value) ? value : defaultValue;
+    }
+
+    public static TValue GetValueOrDefault<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key, TValue defaultValue = default!) where TKey : notnull
+    {
+        return dictionary.TryGetValue(key, out var value) ? value : defaultValue;
     }
 }

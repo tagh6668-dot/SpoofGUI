@@ -315,11 +315,11 @@ public sealed class SingBoxTunnelService : IDisposable
         var schemeIndex = value.IndexOf("://", StringComparison.Ordinal);
         if (schemeIndex > 0)
         {
-            var scheme = value[..schemeIndex].ToLowerInvariant();
-            var rest = value[(schemeIndex + 3)..];
+            var scheme = value.Substring(0, schemeIndex).ToLowerInvariant();
+            var rest = value.Substring(schemeIndex + 3);
             var slash = rest.IndexOf('/');
-            var host = slash >= 0 ? rest[..slash] : rest;
-            var path = slash >= 0 ? rest[slash..] : null;
+            var host = slash >= 0 ? rest.Substring(0, slash) : rest;
+            var path = slash >= 0 ? rest.Substring(slash) : null;
             node["type"] = scheme switch
             {
                 "https" => "https",
@@ -440,15 +440,15 @@ public sealed class SingBoxTunnelService : IDisposable
         var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var q = rawUri.IndexOf('?');
         if (q < 0) return map;
-        var query = rawUri[(q + 1)..];
+        var query = rawUri.Substring(q + 1);
         var frag = query.IndexOf('#');
-        if (frag >= 0) query = query[..frag];
+        if (frag >= 0) query = query.Substring(0, frag);
         foreach (var pair in query.Split('&', StringSplitOptions.RemoveEmptyEntries))
         {
             var idx = pair.IndexOf('=');
             if (idx <= 0) continue;
-            var key = WebUtility.UrlDecode(pair[..idx]);
-            var val = WebUtility.UrlDecode(pair[(idx + 1)..]);
+            var key = WebUtility.UrlDecode(pair.Substring(0, idx));
+            var val = WebUtility.UrlDecode(pair.Substring(idx + 1));
             if (!string.IsNullOrWhiteSpace(key)) map[key] = val;
         }
         return map;

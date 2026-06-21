@@ -28,14 +28,14 @@ internal static class WinDivertDownloader
         {
             progress?.Report("downloading WinDivert...");
             using var http = new HttpClient();
-            await using (var input = await http.GetStreamAsync(DownloadUri, ct).ConfigureAwait(false))
-            await using (var output = File.Create(zipPath))
+            using (var input = await http.GetStreamAsync(DownloadUri, ct).ConfigureAwait(false))
+            using (var output = File.Create(zipPath))
             {
                 await input.CopyToAsync(output, ct).ConfigureAwait(false);
             }
 
             progress?.Report("extracting WinDivert...");
-            ZipFile.ExtractToDirectory(zipPath, tempRoot, overwriteFiles: true);
+            ZipFile.ExtractToDirectory(zipPath, tempRoot);
 
             var subDir = arch == "x86" ? "x86" : "x64";
             var sourceDir = Path.Combine(tempRoot, $"WinDivert-{Package}", subDir);

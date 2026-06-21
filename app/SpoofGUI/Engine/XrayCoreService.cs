@@ -468,16 +468,16 @@ public sealed class XrayCoreService : IDisposable
         var queryStart = rawUri.IndexOf('?');
         if (queryStart < 0) return map;
 
-        var query = rawUri[(queryStart + 1)..];
+        var query = rawUri.Substring(queryStart + 1);
         var fragmentStart = query.IndexOf('#');
-        if (fragmentStart >= 0) query = query[..fragmentStart];
+        if (fragmentStart >= 0) query = query.Substring(0, fragmentStart);
 
         foreach (var pair in query.Split('&', StringSplitOptions.RemoveEmptyEntries))
         {
             var idx = pair.IndexOf('=');
             if (idx <= 0) continue;
-            var key = WebUtility.UrlDecode(pair[..idx]);
-            var value = WebUtility.UrlDecode(pair[(idx + 1)..]);
+            var key = WebUtility.UrlDecode(pair.Substring(0, idx));
+            var value = WebUtility.UrlDecode(pair.Substring(idx + 1));
             if (!string.IsNullOrWhiteSpace(key)) map[key] = value;
         }
 

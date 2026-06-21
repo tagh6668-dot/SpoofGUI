@@ -11,10 +11,18 @@ internal static class TlsClientHello
     private static readonly byte[] Template = Convert.FromHexString(TemplateHex);
     private const int TemplateSniLen = 6;
 
-    private static readonly byte[] Static1 = Template[..11];
+    private static byte[] Slice(byte[] arr, int start, int end)
+    {
+        var len = end - start;
+        var res = new byte[len];
+        Array.Copy(arr, start, res, 0, len);
+        return res;
+    }
+
+    private static readonly byte[] Static1 = Slice(Template, 0, 11);
     private static readonly byte[] Static2 = [0x20];
-    private static readonly byte[] Static3 = Template[76..120];
-    private static readonly byte[] Static4 = Template[(127 + TemplateSniLen)..(262 + TemplateSniLen)];
+    private static readonly byte[] Static3 = Slice(Template, 76, 120);
+    private static readonly byte[] Static4 = Slice(Template, 127 + TemplateSniLen, 262 + TemplateSniLen);
     private static readonly byte[] Static5 = [0x00, 0x15];
 
     public static byte[] Build(byte[] fakeSni)

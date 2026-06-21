@@ -26,7 +26,7 @@ public static partial class V2RayConfigParser
         {
             var start = matches[i].Index;
             var end = i + 1 < matches.Count ? matches[i + 1].Index : text.Length;
-            var entry = text[start..end].Trim();
+            var entry = text.Substring(start, end - start).Trim();
             if (entry.Length > 0) configs.Add(entry);
         }
 

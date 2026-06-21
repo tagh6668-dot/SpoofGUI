@@ -188,7 +188,8 @@ internal sealed class SniSpoofEngine : IDisposable
 
             WinDivert.Send(_divert, buf, received, ref addr);
             conn.SchFakeSent = true;
-            var snapshot = buf[..(int)received];
+            var snapshot = new byte[received];
+            Array.Copy(buf, 0, snapshot, 0, received);
             var addrCopy = addr;
             new Thread(() => FakeSend(snapshot, conn, addrCopy)) { IsBackground = true }.Start();
             return;

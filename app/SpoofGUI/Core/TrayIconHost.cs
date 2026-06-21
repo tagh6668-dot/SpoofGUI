@@ -83,7 +83,7 @@ internal sealed class TrayIconHost : IDisposable
         uID = 1,
         uCallbackMessage = CallbackMessage,
         hIcon = _hIcon,
-        szTip = tooltip.Length > 127 ? tooltip[..127] : tooltip,
+        szTip = tooltip.Length > 127 ? tooltip.Substring(0, 127) : tooltip,
     };
 
     private IntPtr WndProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
