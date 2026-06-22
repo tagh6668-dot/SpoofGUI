@@ -515,10 +515,10 @@ public sealed class XrayCoreService : IDisposable
                 System.Net.Sockets.ProtocolType.Udp);
             socket.Connect(IPAddress.Parse(remoteIp), remotePort);
             var ip = (socket.LocalEndPoint as IPEndPoint)?.Address.ToString();
-            if (string.IsNullOrWhiteSpace(ip) || NetworkHelper.IsVirtualInterface(ip))
-                return NetworkHelper.GetLocalPhysicalIPAddress();
+            if (!string.IsNullOrWhiteSpace(ip) && !IPAddress.IsLoopback(IPAddress.Parse(ip)))
+                return ip;
 
-            return ip;
+            return NetworkHelper.GetLocalPhysicalIPAddress();
         }
         catch
         {

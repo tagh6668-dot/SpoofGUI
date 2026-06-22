@@ -110,11 +110,11 @@ public sealed class EngineClient : IAsyncDisposable
             using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             socket.Connect(IPAddress.Parse(remoteIp), remotePort);
             var ip = (socket.LocalEndPoint as IPEndPoint)?.Address.ToString() ?? "";
-            if (string.IsNullOrEmpty(ip) || NetworkHelper.IsVirtualInterface(ip))
+            if (!string.IsNullOrEmpty(ip) && !IPAddress.IsLoopback(IPAddress.Parse(ip)))
             {
-                return NetworkHelper.GetLocalPhysicalIPAddress();
+                return ip;
             }
-            return ip;
+            return NetworkHelper.GetLocalPhysicalIPAddress();
         }
         catch
         {

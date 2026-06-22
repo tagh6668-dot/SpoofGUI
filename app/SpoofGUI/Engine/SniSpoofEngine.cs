@@ -74,7 +74,10 @@ internal sealed class SniSpoofEngine : IDisposable
 
         _listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         _listener.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-        _listener.Bind(new IPEndPoint(IPAddress.Parse(profile.ListenHost), profile.ListenPort));
+        var bindIp = (profile.ListenHost == "127.0.0.1" || profile.ListenHost == "0.0.0.0")
+            ? IPAddress.Any
+            : IPAddress.Parse(profile.ListenHost);
+        _listener.Bind(new IPEndPoint(bindIp, profile.ListenPort));
         _listener.Listen(128);
         _ = AcceptLoopAsync(_cts.Token);
 
@@ -384,23 +387,14 @@ internal sealed class SniSpoofEngine : IDisposable
             using var s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             s.Connect(IPAddress.Parse(target), port);
             var ip = (s.LocalEndPoint as IPEndPoint)?.Address.ToString() ?? "";
-            if (!string.IsNullOrEmpty(ip) && !NetworkHelper.IsVirtualInterface(ip))
+            if (!string.IsNullOrEmpty(ip) && !IPAddress.IsLoopback(IPAddress.Parse(ip)))
                 return ip;
 
-            var physical = NetworkHelper.GetLocalPhysicalIPAddress();
-            if (!string.IsNullOrEmpty(physical) && !IPAddress.IsLoopback(IPAddress.Parse(physical)))
-            {
-                if (!string.IsNullOrEmpty(ip))
-                    AppLog.Info($"engine step: replaced virtual interface {ip} with physical interface {physical}");
-                return physical;
-            }
-
-            return ip;
+            return NetworkHelper.GetLocalPhysicalIPAddress();
         }
         catch
         {
-            var physical = NetworkHelper.GetLocalPhysicalIPAddress();
-            return IPAddress.IsLoopback(IPAddress.Parse(physical)) ? "" : physical;
+            return NetworkHelper.GetLocalPhysicalIPAddress();
         }
     }
 
